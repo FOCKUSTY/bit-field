@@ -3,8 +3,9 @@
   "version": "0.0.1-alpha.1",
   "description": "bit field for some systems",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && fockbuilder"
   },
   "files": [
     "./**/*.js",
@@ -37,5 +38,8 @@
   "dependencies": {
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0"
+  },
+  "devDependencies": {
+    "fock-builder": "^2.1.0-beta.1"
   }
 }
