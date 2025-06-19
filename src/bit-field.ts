@@ -22,14 +22,14 @@ class BitField {
    * 
    * @example
    * ```ts
-   * BitField.summarize([1n, 2n, 4n]) // 7n
-   * BitField.summarize([2n, 2n, 4n]) // 6n
-   * BitField.summarize([1n, 4n]) // 5n
-   * BitField.summarize([1n, 1n]) // 1n
+   * BitField.summarize(1n, 2n, 4n) // 7n
+   * BitField.summarize(2n, 2n, 4n) // 6n
+   * BitField.summarize(1n, 4n) // 5n
+   * BitField.summarize(1n, 1n) // 1n
    * BitField.summarize(1n) // 1n
    * ```
    */
-  public static summarize(bits: ArrayOrType<Bit>): bigint {
+  public static summarize(...bits: Bit[]): bigint {
     if (!Array.isArray(bits)) return BigInt(bits);
 
     let summ = DEFAULT_BIT;
@@ -42,16 +42,16 @@ class BitField {
    * 
    * @example
    * ```ts
-   * BitField.add(1n, [2n, 4n]) // 7n
-   * BitField.add(2n, [2n, 4n]) // 6n
+   * BitField.add(1n, 2n, 4n) // 7n
+   * BitField.add(2n, 2n, 4n) // 6n
    * BitField.add(1n, 4n) // 5n
    * BitField.add(1n, 1n) // 1n
    * ```
    * 
    * @equals `BitField.add(1n, 2n)` === `Bitiield.summarize([1n, 2n...])`
    */
-  public static add(bit: Bit, add: ArrayOrType<Bit>): bigint {
-    return BigInt(bit) | BitField.summarize(add);
+  public static add(bit: Bit, ...add: Bit[]): bigint {
+    return BigInt(bit) | BitField.summarize(...add);
   }
   
   /**
@@ -59,14 +59,14 @@ class BitField {
    * 
    * @example
    * ```ts
-   * BitField.remove(7n, [4n, 2n]) // 1n
-   * BitField.remove(14n, [4n, 2n]) // 8n
-   * BitField.remove(14n, [4n, 2n, 1n]) // 8n
-   * BitField.remove(14n, [1n]) // 14n
+   * BitField.remove(7n, 4n, 2n) // 1n
+   * BitField.remove(14n, 4n, 2n) // 8n
+   * BitField.remove(14n, 4n, 2n, 1n) // 8n
+   * BitField.remove(14n, 1n) // 14n
    * ```
    */
-  public static remove(bit: Bit, remove: ArrayOrType<Bit>): bigint {
-    return BigInt(bit) &~ BitField.summarize(remove);
+  public static remove(bit: Bit, ...remove: Bit[]): bigint {
+    return BigInt(bit) &~ BitField.summarize(...remove);
   }
 
   /**
@@ -114,16 +114,16 @@ class BitField {
    * 
    * @example
    * ```ts
-   * new BitField(1n).add([2n, 4n]) // 7n
-   * new BitField(2n).add([2n, 4n]) // 6n
+   * new BitField(1n).add(2n, 4n) // 7n
+   * new BitField(2n).add(2n, 4n) // 6n
    * new BitField(1n).add(4n) // 5n
    * new BitField(1n).add(1n) // 1n
    * ```
    * 
    * @equals `new BitField(1n).add(2n)` === `Bitiield.summarize([1n, 2n...])`
    */
-  public add(bits: ArrayOrType<Bit>): bigint {
-    return BitField.add(this.bits, bits);
+  public add(...bits: Bit[]): bigint {
+    return BitField.add(this.bits, ...bits);
   }
 
   /**
@@ -131,14 +131,14 @@ class BitField {
    * 
    * @example
    * ```ts
-   * new BitField(7n).remove([4n, 2n]) // 1n
-   * new BitField(14n).remove([4n, 2n]) // 8n
-   * new BitField(14n).remove([4n, 2n, 1n]) // 8n
-   * new BitField(14n).remove([1n]) // 14n
+   * new BitField(7n).remove(4n, 2n) // 1n
+   * new BitField(14n).remove(4n, 2n) // 8n
+   * new BitField(14n).remove(4n, 2n, 1n) // 8n
+   * new BitField(14n).remove(1n) // 14n
    * ```
    */
-  public remove(bits: ArrayOrType<Bit>): bigint {
-    return BitField.remove(this.bits, bits);
+  public remove(...bits: Bit[]): bigint {
+    return BitField.remove(this.bits, ...bits);
   }
 
   /**
@@ -154,10 +154,10 @@ class BitField {
    * 
    * @equals `new BitField(1n).has(2n)` === `BitField.equals(1n, 2n)`
    */
-  public has(bit: ArrayOrType<Bit>): boolean {
+  public has(...bits: Bit[]): boolean {
     return BitField.equals(
       this.bits,
-      BitField.summarize(bit)
+      BitField.summarize(...bits)
     );
   }
 };
