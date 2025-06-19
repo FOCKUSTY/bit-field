@@ -1,0 +1,41 @@
+{
+  "name": "bit-field",
+  "version": "0.0.1-alpha.1",
+  "description": "bit field for some systems",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "files": [
+    "./**/*.js",
+    "./**/*.js.map",
+    "./**/*.d.ts",
+    "./**/*.d.ts.map",
+    "./**/*.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FOCKUSTY/bit-field.git"
+  },
+  "keywords": [
+    "bitfield",
+    "bit",
+    "bits"
+  ],
+  "author": {
+    "name": "FOCKUSTY",
+    "email": "viserd.yt@gmail.com",
+    "url": "https://fockusty.netlify.app/"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/FOCKUSTY/bit-field/issues"
+  },
+  "homepage": "https://github.com/FOCKUSTY/bit-field#readme",
+  "dependencies": {
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0"
+  }
+}
