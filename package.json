@@ -1,6 +1,6 @@
 {
-  "name": "bit-field",
-  "version": "0.0.1-alpha.1",
+  "name": "fbit-field",
+  "version": "1.0.0-alpha.1a",
   "description": "bit field for some systems",
   "main": "index.js",
   "types": "index.d.ts",
@@ -35,11 +35,11 @@
     "url": "https://github.com/FOCKUSTY/bit-field/issues"
   },
   "homepage": "https://github.com/FOCKUSTY/bit-field#readme",
-  "dependencies": {
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0"
-  },
   "devDependencies": {
-    "fock-builder": "^2.1.0-beta.1"
+    "@types/node": "^24.0.3",
+    "fock-builder": "^2.1.0-beta.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.3"
   }
 }
