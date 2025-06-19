@@ -2,6 +2,12 @@
 Simple bit field for some systems: rights, permissions, configs and more...
 
 ## How to use `BitField` class?
+This is utility-class for comfort work with bits. It can:
+- compare bits: `BitField.equals`, `new BitField().has`
+- summarize bits: `BitField.summarize`, `BitField.add`, `new BitField().add`
+- subtract bits: `BitField.remove`, `new BitField().remove`
+- takes logarithm2 of bits (big integers): `BitField.logarithm2`
+- takes max bit of bits (find big integer): `BitField.max`
 
 ```ts
 import { BitField } from "fbit-field";
@@ -67,3 +73,7 @@ new BitField(1n).has("1") // true
 new BitField(1n).has(2n)  // false
 new BitField(1n).has("2") // false
 ```
+
+## How to use `BitBuilder` class?
+
+...so hard to night-me, can continue tomorrow?...
