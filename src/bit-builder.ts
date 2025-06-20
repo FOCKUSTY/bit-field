@@ -5,9 +5,7 @@ import BitField from "./bit-field";
 type IObject = { [key: string]: bigint } | { readonly [key: string]: bigint };
 
 class BitBuilder<T extends string> {
-  public constructor(public readonly bits: T[] | Readonly<T[]>) {
-    bits.every(bit => typeof BigInt(bit) === "bigint");
-  }
+  public constructor(public readonly bits: T[] | Readonly<T[]>) {}
 
   public static resolve(bits: IObject): bigint {
     return BitField.summarize(...Object.values(bits));
