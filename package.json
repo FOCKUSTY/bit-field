@@ -9,12 +9,13 @@
     "test": "ts-mocha ./src/test/**/*.test.ts"
   },
   "files": [
-    "!./**/test",
     "./**/*.js",
     "./**/*.js.map",
     "./**/*.d.ts",
     "./**/*.d.ts.map",
     "./**/*.json",
+
+    "!./**/test/",
     "LICENSE",
     "README.md"
   ],
