@@ -29,12 +29,13 @@ const formatSettings = <T extends string>(
 type ISettings<T extends string> = Record<Capitalize<T>, string[]|readonly string[]>;
 
 class Compiler<T extends string> {
+  public readonly keys: T[];
+
   public constructor(
     public readonly settings: ISettings<T>,
-    public readonly keys: T[],
     public readonly filePath: string
   ) {
-    this.keys = Array.from(new Set(keys));
+    this.keys = Object.keys(settings) as T[];
     this.filePath = join(filePath);
   }
 
