@@ -1,6 +1,6 @@
 {
   "name": "fbit-field",
-  "version": "1.0.3-alpha.1a",
+  "version": "1.1.0-alpha.1a",
   "description": "bit field for some systems",
   "main": "index.js",
   "types": "index.d.ts",
