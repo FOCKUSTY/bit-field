@@ -2,53 +2,17 @@ import { DEFAULT_BIT } from "./constants";
 
 import BitField from "./bit-field";
 
-/*   export class Parser {
-    public static toBigInt = <
-      T extends keyof Rights.Types.All,
-    >(
-      type: T,
-      right: keyof typeof Rights.Constants.AVAILABLE[T]
-    ): bigint => {
-      return ((Rights.Constants.AVAILABLE[type] as any))[right];
-    };
-
-    public static toBigIntFromArray = <
-      T extends keyof Rights.Types.All,
-    >(
-      type: T,
-      rights: MustArray<keyof typeof Rights.Constants.AVAILABLE[T]>
-    ) =>
-      Parser.execute(Object.fromEntries(rights.map(v =>
-        [v, Parser.toBigInt(type, v)])));
-
-    public static exist = <
-      T extends keyof Rights.Types.All,
-      K extends keyof Rights.Types.All[T]
-    >(
-      type: [T, K],
-      right: bigint
-    ): boolean => {
-      return ((Rights.Constants.DEFAULT[type[0]] as any)[type[1]] & right) === right;
-    }
-
-    public static execute<T extends object>(rights: T[keyof T] | T) {
-      let raw: bigint = 0n;
-      
-      Object.keys(rights).forEach(k => {
-        if (typeof rights[k] === "bigint")
-          raw += rights[k];
-        else Object.keys(rights[k]).forEach(k2 => raw += rights[k][k2])
-      });
-
-      return raw;
-    }
-  }; */
-
+type IObject = { [key: string]: bigint } | { readonly [key: string]: bigint };
 
 class BitBuilder<T extends string> {
   public constructor(public readonly bits: T[] | Readonly<T[]>) {
     bits.every(bit => typeof BigInt(bit) === "bigint");
   }
+
+  public static resolve(bits: IObject): bigint {
+    return BitField.summarize(...Object.values(bits));
+  }
+
   /**
    * starts with offset bigint
    * @example
@@ -73,9 +37,7 @@ class BitBuilder<T extends string> {
    * }
    */
   public execute(
-    offset:
-      | bigint
-      | ({ [key: string]: bigint } | { readonly [key: string]: bigint }) = DEFAULT_BIT,
+    offset: bigint | IObject = DEFAULT_BIT,
     exclude: T[] | readonly T[] = [],
     include?: T[] | readonly T[],
   ): Record<T, bigint> {
@@ -91,14 +53,12 @@ class BitBuilder<T extends string> {
     ) as Record<T, bigint>;
   }
 
-  public resolve(bits: ({ [key: string]: bigint } | { readonly [key: string]: bigint })): bigint {
-    return BitField.summarize(...Object.values(bits));
-  };
+  public resolve(bits: IObject) {
+    return BitBuilder.resolve(bits)
+  }
 
   private resolveOffset(
-    offset:
-      | bigint
-      | ({ [key: string]: bigint } | { readonly [key: string]: bigint }),
+    offset: bigint | IObject,
   ): bigint {
     if (typeof offset === "bigint") return offset;
     
