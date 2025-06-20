@@ -35,7 +35,7 @@ class Compiler<T extends string> {
     public readonly filePath: string
   ) {
     this.keys = Array.from(new Set(keys));
-    this.filePath = join(__dirname, filePath);
+    this.filePath = join(filePath);
   }
 
   public execute() {
