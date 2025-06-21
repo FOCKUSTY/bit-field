@@ -145,9 +145,9 @@ class Compiler<T extends string> {
     }
   }
 
-  public execute() {
+  public execute(values: string = "") {
     this.createFile();
-    this.writeFile(this);
+    this.writeFile(this, values);
     this.formatFile();
 
     return readFileSync(this.filePath);
