@@ -4,7 +4,7 @@ import { DEFAULT_BIT } from "./constants";
 class BitField {
   /**
    * compares two values
-   * 
+   *
    * @example
    * ```ts
    * BitField.equals(1n, 1n)  // true
@@ -19,7 +19,7 @@ class BitField {
 
   /**
    * summurize values
-   * 
+   *
    * @example
    * ```ts
    * BitField.summarize(1n, 2n, 4n) // 7n
@@ -33,13 +33,13 @@ class BitField {
     if (!Array.isArray(bits)) return BigInt(bits);
 
     let summ = DEFAULT_BIT;
-    bits.forEach(b => summ |= BigInt(b));
+    bits.forEach((b) => (summ |= BigInt(b)));
     return summ;
   }
 
   /**
    * summurize values
-   * 
+   *
    * @example
    * ```ts
    * BitField.add(1n, 2n, 4n) // 7n
@@ -47,16 +47,16 @@ class BitField {
    * BitField.add(1n, 4n) // 5n
    * BitField.add(1n, 1n) // 1n
    * ```
-   * 
+   *
    * @equals `BitField.add(1n, 2n)` === `Bitiield.summarize([1n, 2n...])`
    */
   public static add(bit: Bit, ...add: Bit[]): bigint {
     return BigInt(bit) | BitField.summarize(...add);
   }
-  
+
   /**
    * subtract values
-   * 
+   *
    * @example
    * ```ts
    * BitField.remove(7n, 4n, 2n) // 1n
@@ -66,12 +66,12 @@ class BitField {
    * ```
    */
   public static remove(bit: Bit, ...remove: Bit[]): bigint {
-    return BigInt(bit) &~ BitField.summarize(...remove);
+    return BigInt(bit) & ~BitField.summarize(...remove);
   }
 
   /**
    * takes the logarithm of a number
-   * 
+   *
    * @example
    * ```ts
    * BitField.logarithm2(1n << 10n) // 10n
@@ -86,32 +86,31 @@ class BitField {
 
   /**
    * takes max value of values
-   * 
+   *
    * @example
    * ```ts
    * BitField.max(1n, 2n, 3n, 4n) // 4n
-   * ``` 
+   * ```
    */
   public static max(...values: Bit[]): bigint {
-    return BigInt(values
-      .toSorted((a, b) => {
-        const data = <const>[BigInt(a), BigInt(b)];
+    return BigInt(
+      values
+        .toSorted((a, b) => {
+          const data = <const>[BigInt(a), BigInt(b)];
 
-        return data[0] > data[1]
-          ? 1 : data[0] < data[1]
-            ? -1 : 0;
-      }).toReversed()[0]);
+          return data[0] > data[1] ? 1 : data[0] < data[1] ? -1 : 0;
+        })
+        .toReversed()[0],
+    );
   }
-  
-  public constructor(
-    public readonly bits: Bit = DEFAULT_BIT
-  ) {
+
+  public constructor(public readonly bits: Bit = DEFAULT_BIT) {
     this.bits = BigInt(bits);
   }
 
   /**
    * summurize values
-   * 
+   *
    * @example
    * ```ts
    * new BitField(1n).add(2n, 4n) // 7n
@@ -119,7 +118,7 @@ class BitField {
    * new BitField(1n).add(4n) // 5n
    * new BitField(1n).add(1n) // 1n
    * ```
-   * 
+   *
    * @equals `new BitField(1n).add(2n)` === `Bitiield.summarize([1n, 2n...])`
    */
   public add(...bits: Bit[]): bigint {
@@ -128,7 +127,7 @@ class BitField {
 
   /**
    * subtract values
-   * 
+   *
    * @example
    * ```ts
    * new BitField(7n).remove(4n, 2n) // 1n
@@ -143,7 +142,7 @@ class BitField {
 
   /**
    * checking bits equals
-   * 
+   *
    * @example
    * ```ts
    * new BitField(1n).has(1n)  // true
@@ -151,16 +150,13 @@ class BitField {
    * new BitField(1n).has(2n)  // false
    * new BitField(1n).has("2") // false
    * ```
-   * 
+   *
    * @equals `new BitField(1n).has(2n)` === `BitField.equals(1n, 2n)`
    */
   public has(...bits: Bit[]): boolean {
-    return BitField.equals(
-      this.bits,
-      BitField.summarize(...bits)
-    );
+    return BitField.equals(this.bits, BitField.summarize(...bits));
   }
-};
+}
 
 export { BitField };
 

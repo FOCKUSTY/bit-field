@@ -43,30 +43,31 @@ class BitBuilder<T extends string> {
       this.bits.map((bit, index) => {
         const modifier = this.resolveOffset(offset) + BigInt(index);
 
-        if (include && !include.includes(bit)) return [bit, DEFAULT_BIT << modifier];
+        if (include && !include.includes(bit))
+          return [bit, DEFAULT_BIT << modifier];
         if (exclude.includes(bit)) return [bit, DEFAULT_BIT << modifier];
-        
+
         return [bit, 1n << modifier];
       }),
     ) as Record<T, bigint>;
   }
 
   public resolve(bits: IObject) {
-    return BitBuilder.resolve(bits)
+    return BitBuilder.resolve(bits);
   }
 
-  private resolveOffset(
-    offset: bigint | IObject,
-  ): bigint {
+  private resolveOffset(offset: bigint | IObject): bigint {
     if (typeof offset === "bigint") return offset;
-    
+
     const keys = Object.keys(offset);
     if (keys.length === 0) return DEFAULT_BIT;
 
-    return BitField.logarithm2(BitField.max(...keys.map((key) => offset[key]))) + 1n;
+    return (
+      BitField.logarithm2(BitField.max(...keys.map((key) => offset[key]))) + 1n
+    );
   }
 }
 
-export { BitBuilder }
+export { BitBuilder };
 
 export default BitBuilder;

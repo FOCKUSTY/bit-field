@@ -5,7 +5,7 @@ import BitField, { BitBuilder } from "./index";
 import { join, parse } from "path";
 import { existsSync, unlinkSync, writeFileSync } from "fs";
 
-type ISettings<T extends string> = Record<T, string[]|readonly string[]>;
+type ISettings<T extends string> = Record<T, string[] | readonly string[]>;
 
 class Compiler<T extends string> {
   public readonly keys: T[];
@@ -13,7 +13,7 @@ class Compiler<T extends string> {
   public constructor(
     public readonly settings: ISettings<T>,
     public readonly filePath: string,
-    public readonly format: (value: string) => string
+    public readonly format: (value: string) => string,
   ) {
     this.keys = Object.keys(settings) as T[];
     this.filePath = join(filePath);
@@ -30,7 +30,7 @@ class Compiler<T extends string> {
 
     if (settings.length === 0) return [];
 
-    return settings.map(string => this.format(string));
+    return settings.map((string) => this.format(string));
   }
 
   private createFile() {
@@ -41,9 +41,7 @@ class Compiler<T extends string> {
 
   private compile() {
     const settings = Object.fromEntries(
-      this.keys.map((key) => [
-        key, this.parse(key)
-      ])
+      this.keys.map((key) => [key, this.parse(key)]),
     );
 
     let offset = 0n;
@@ -58,11 +56,11 @@ class Compiler<T extends string> {
           Object.fromEntries(
             Object.keys(bits).map((key) => [
               `/** @value ${bits[key]} */'\n'` + key,
-              `1n << ${BitField.logarithm2(bits[key])}n`
-            ])
-          )
+              `1n << ${BitField.logarithm2(bits[key])}n`,
+            ]),
+          ),
         ];
-      })
+      }),
     );
   }
 
