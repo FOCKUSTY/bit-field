@@ -130,7 +130,7 @@ class Compiler<T extends string> {
        * YOU WORKING WITH FILE SYSTEM. BE CAREFUL.
        * @recomendation PLEASE, USE DEFAULT METHOS.
        */
-      compile?: (me: Compiler<T>) => string;
+      compile?: <K = unknown>(me: Compiler<T>) => K;
     }
   ) {
     this.keys = Object.keys(settings) as T[];
