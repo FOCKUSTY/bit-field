@@ -39,10 +39,23 @@ export type Config = {
 };
 
 export const replaceKeys = {
-  compiled: "// ## { WRITE_COMPILED_HERE } ## \\\\",
-  export: "// ## { WRITE_EXPORT_HERE } ## \\\\",
-  values: "// ## WRITE_VALUES_HERE ## \\\\"
+  compiled: [
+    "// ## { COMPILED__WRITE_COMPILED_HERE } ## \\\\",
+    /(\/\/ ## { COMPILED__WRITE_COMPILED_HERE } ## \\\\[.\s\S]*\/\/ ## { COMPILED__WRITE_COMPILED_HERE } ## \\\\)|(\/\/ ## { WRITE_COMPILED_HERE } ## \\\\)/gi
+  ],
+  export: [
+    "// ## { COMPILED__WRITE_EXPORT_HERE } ## \\\\",
+    /(\/\/ ## { COMPILED__WRITE_EXPORT_HERE } ## \\\\[.\s\S]*\/\/ ## { COMPILED__WRITE_EXPORT_HERE } ## \\\\)|(\/\/ ## { WRITE_EXPORT_HERE } ## \\\\)/gi
+  ],
+  values: [
+    "// ## COMPILED__WRITE_VALUES_HERE ## \\\\",
+    /(\/\/ ## { COMPILED__WRITE_VALUES_HERE } ## \\\\[.\s\S]*\/\/ ## { COMPILED__WRITE_VALUES_HERE } ## \\\\)|(\/\/ ## { WRITE_VALUES_HERE } ## \\\\)/gi
+  ]
 } as const;
+
+const formatToReplace = (key: keyof typeof replaceKeys, data: string) => {
+  return `${replaceKeys[key][0]}\n${data}\n${replaceKeys[key][0]}`;
+};
 
 export const format = (string: string, capitalize: boolean) =>
   capitalize
@@ -293,12 +306,13 @@ class Compiler<T extends string> {
       `${this.config.defaultExportOn ? `\n\nexport default ${name};\n` : ""}`;
 
     if (this.config.writeInCompiler) {
+      console.log(this.readFile().match(replaceKeys.compiled[1]))
       file = this.readFile()
-        .replaceAll(replaceKeys.compiled, settingsData)
-        .replaceAll(replaceKeys.export, exportData)
-        .replaceAll(replaceKeys.values, values);
+        .replaceAll(replaceKeys.compiled[1], formatToReplace("compiled", settingsData))
+        .replaceAll(replaceKeys.export[1], formatToReplace("export", exportData))
+        .replaceAll(replaceKeys.values[1], formatToReplace("values", values));
     } else {
-      file = `${settingsData}\n${values}\n${exportData}`;
+      file = `${formatToReplace("compiled", settingsData)}\n${formatToReplace("values", values)}\n${formatToReplace("export", exportData)}`;
     };
 
     writeFileSync(this.filePath, file, "utf-8");
@@ -321,7 +335,7 @@ class Compiler<T extends string> {
 
   private formatFile() {
     if (!this.config.prettierOn) return;
-    
+
     childProcces.exec(`prettier ${this.filePath} -w`);
   }
 }
