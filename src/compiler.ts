@@ -5,15 +5,16 @@ import BitField, { BitBuilder } from "./index";
 import { join, parse } from "path";
 import { existsSync, unlinkSync, writeFileSync } from "fs";
 
-type ISettings<T extends string> = Record<T, string[] | readonly string[]>;
+export type ConstArray<T> = T[] | readonly T[];
+export type ISettings<T extends string> = Record<T, ConstArray<string>>;
 
-const format = (string: string, capitalize: boolean) =>
+export const format = (string: string, capitalize: boolean) =>
   capitalize
     ? string.charAt(0).toUpperCase() + string.slice(1)
     : string.charAt(0).toLowerCase() + string.slice(1);
 
-const defaultSettingsFormat = <T extends string>(
-  settings: T[] | readonly T[]
+export const defaultSettingsFormat = <T extends string>(
+  settings: ConstArray<T>
 ) =>
   settings.map((string: T) =>
     format(
@@ -69,37 +70,79 @@ class Compiler<T extends string> {
     public readonly settings: ISettings<T>,
     public readonly filePath: string,
     /**
-     * Formattings settings value
+     * - !! WARNING !!
+     * - !! WARNING !!
+     * - !! WARNING !!
      * 
-     * @example
-     * input:
-     *   [ "SOME_VALUE_ONE", "SOME_VALUE_TWO", "SOME_DIRECTIVE__SOME_VALUE" ]
-     * output:
-     *   [ "someValueOne", "someValueTwo", "someDirectiveSomeValue" ]
+     * ---
      * 
-     * @default
-     * (used in `@example`)
-     * ```ts
-     * const defaultSettingsFormat = <T extends string>(
-     * settings: T[] | readonly T[]
-     *  ) =>
-     *    settings.map((string: T) =>
-     *      capitilize(
-     *        string
-     *          .toLowerCase()
-     *          .replaceAll("__", " ")
-     *          .replaceAll("_", " ")
-     *          .split(" ")
-     *          .map((v) => capitilize(v))
-     *          .join("")
-     *      )
-     *    );
-     * ```
+     * YOU WORKING WITH FILE SYSTEM, BE CAREFUL.
+     * @recomendation PLEASE, USE DEFAULT METHOS.
      */
-    public readonly settingsFormat: (settings: ISettings<T>[T]) => string[]|readonly string[] = defaultSettingsFormat,
+    methods?: {
+      /**
+       * Formattings settings value
+       * 
+       * @example
+       * input:
+       *   [ "SOME_VALUE_ONE", "SOME_VALUE_TWO", "SOME_DIRECTIVE__SOME_VALUE" ]
+       * output:
+       *   [ "someValueOne", "someValueTwo", "someDirectiveSomeValue" ]
+       * 
+       * @default
+       * (used in `@example`)
+       * ```ts
+       * const defaultSettingsFormat = <T extends string>(
+       * settings: T[] | readonly T[]
+       *  ) =>
+       *    settings.map((string: T) =>
+       *      capitilize(
+       *        string
+       *          .toLowerCase()
+       *          .replaceAll("__", " ")
+       *          .replaceAll("_", " ")
+       *          .split(" ")
+       *          .map((v) => capitilize(v))
+       *          .join("")
+       *      )
+       *    );
+       * ```
+       */
+      settingsFormat?: (settings: ISettings<T>[T]) => ConstArray<string>;
+      /**
+       * - !! WARNING !!
+       * - !! WARNING !!
+       * - !! WARNING !!
+       * 
+       * ---
+       * 
+       * YOU WORKING WITH FILE SYSTEM, BE CAREFUL.
+       * @recomendation PLEASE, USE DEFAULT METHOS.
+       */
+      writeFile?: () => string;
+      /**
+       * - !! WARNING !!
+       * - !! WARNING !!
+       * - !! WARNING !!
+       * 
+       * ---
+       * 
+       * YOU WORKING WITH FILE SYSTEM. BE CAREFUL.
+       * @recomendation PLEASE, USE DEFAULT METHOS.
+       */
+      compile?: () => string;
+    }
   ) {
     this.keys = Object.keys(settings) as T[];
     this.filePath = join(filePath);
+
+    if (methods) {
+      (Object.keys(methods) as (keyof typeof methods)[]).forEach((key) => {
+        if (methods[key]) {
+          this[key] = methods[key] as any;
+        };
+      });
+    }
   }
 
   public execute() {
@@ -116,13 +159,9 @@ class Compiler<T extends string> {
     return this.settingsFormat(settings);
   }
 
-  private createFile() {
-    if (existsSync(this.filePath)) unlinkSync(this.filePath);
+  public settingsFormat = defaultSettingsFormat;
 
-    writeFileSync(this.filePath, "", "utf-8");
-  }
-
-  private compile() {
+  public compile() {
     const settings = Object.fromEntries(
       this.keys.map((key) => [key, this.parse(key)]),
     );
@@ -147,7 +186,7 @@ class Compiler<T extends string> {
     );
   }
 
-  private writeFile() {
+  public writeFile() {
     const data = JSON.stringify(this.compile(), undefined, 2)
       .replaceAll('"', "")
       .replaceAll("}", "} as const")
@@ -168,6 +207,14 @@ class Compiler<T extends string> {
       "\n\nexport default settings;\n";
 
     writeFileSync(this.filePath, file, "utf-8");
+
+    return file;
+  }
+  
+  private createFile() {
+    if (existsSync(this.filePath)) unlinkSync(this.filePath);
+
+    writeFileSync(this.filePath, "", "utf-8");
   }
 
   private formatFile() {
