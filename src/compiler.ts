@@ -3,10 +3,46 @@ import childProcces = require("child_process");
 import BitField, { BitBuilder } from "./index";
 
 import { join, parse } from "path";
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 
 export type ConstArray<T> = T[] | readonly T[];
 export type ISettings<T extends string> = Record<T, ConstArray<string>>;
+
+export type Config = {
+  /**
+   * @description name of settings
+   * @default settings
+   */
+  name: string,
+  /**
+   * write in compiler-file:
+   * 
+   * @use `// ## { WRITE_COMPILED_HERE } ## \\`
+   * to write compiled file where you need
+   * 
+   * @use `// ## { WRITE_EXPORT_HERE } ## \\ `
+   * to write export where you need
+   * @default end of file
+   * 
+   */
+  writeInCompiler: boolean,
+  /**
+   * switch on/off prettier for file
+   * @default true
+   */
+  prettierOn: boolean,
+  /**
+   * switch on/off default export in file
+   * @default true
+   */
+  defaultExportOn: boolean,
+};
+
+export const replaceKeys = {
+  compiled: "// ## { WRITE_COMPILED_HERE } ## \\\\",
+  export: "// ## { WRITE_EXPORT_HERE } ## \\\\",
+  values: "// ## WRITE_VALUES_HERE ## \\\\"
+} as const;
 
 export const format = (string: string, capitalize: boolean) =>
   capitalize
@@ -65,6 +101,13 @@ export const defaultSettingsFormat = <T extends string>(
  */  
 class Compiler<T extends string> {
   public readonly keys: T[];
+
+  public readonly config: Config = {
+    name: "settings",
+    prettierOn: true,
+    writeInCompiler: false,
+    defaultExportOn: true
+  };
 
   public constructor(
     public readonly settings: ISettings<T>,
@@ -131,10 +174,31 @@ class Compiler<T extends string> {
        * @recomendation PLEASE, USE DEFAULT METHOS.
        */
       compile?: <K = unknown>(me: Compiler<T>) => K;
-    }
+
+      /**
+       * - WARNING
+       * 
+       * ---
+       * 
+       * You working with compiler formatter options. be carefule.
+       * @recomendation please, use default method.
+       */
+      resolveForCompiled?: (me: Compiler<T>) => string;
+    },
+    /**
+     * config of compiler options
+     */
+    config?: Partial<Config>
   ) {
     this.keys = Object.keys(settings) as T[];
     this.filePath = join(filePath);
+
+    this.config = config
+      ? {
+        ...this.config,
+        ...config
+      }
+      : this.config;
 
     if (methods) {
       (Object.keys(methods) as (keyof typeof methods)[]).forEach((key) => {
@@ -187,39 +251,77 @@ class Compiler<T extends string> {
     );
   }
 
-  public writeFile(me: this, values: string = "") {
-    const data = JSON.stringify(this.compile(me), undefined, 2)
+  public resolveForCompiled(me: this) {
+    return JSON.stringify(this.compile(me), undefined, 2)
       .replaceAll('"', "")
       .replaceAll("}", "} as const")
       .replaceAll("'\\n'", "\n")
       .replaceAll("as const,", "as const,\n")
       .replaceAll("n,", "n,\n");
+  };
 
-    const file =
+  /**
+   * @param values
+   * @use `// ## WRITE_VALUES_HERE ## \\`
+   * to write values where you need
+   */
+  public writeFile(
+    me: this,
+    /**
+     * @use `// ## WRITE_VALUES_HERE ## \\`
+     * to write values where you need
+     */
+    values: string = ""
+  ) {
+    const data = this.resolveForCompiled(me);
+
+    let file = "";
+
+    const name = this.config.name;
+    const capitalizeName = format(name, true);
+    const settingsData =
       "\n/**" +
       `\n * - this file was auto genereted by ${parse(__filename).name} ` +
       "\n * - if you see inconsistencies: https://github.com/FOCKUSTY/bit-field/issues " +
       "\n */" +
-      `\nexport const settings = ${data};` +
-      "\n" +
-      "\n" + values + "\n" +
-      "\nexport type Keys = keyof typeof settings;" +
-      "\nexport type Settings<T extends Keys> = (typeof settings)[T];" +
-      "\nexport type SettingsKeys<T extends Keys> = keyof Settings<T>;" +
-      "\n\nexport default settings;\n";
+      `\nexport const ${name} = ${data};`;
+
+    const exportData =
+      `\nexport type Keys = keyof typeof ${name};` +
+      `\nexport type ${capitalizeName}<T extends Keys> = (typeof ${name})[T];` +
+      `\nexport type ${capitalizeName}Keys<T extends Keys> = keyof ${capitalizeName}<T>;` +
+      `${this.config.defaultExportOn ? `\n\nexport default ${name};\n` : ""}`;
+
+    if (this.config.writeInCompiler) {
+      file = this.readFile()
+        .replaceAll(replaceKeys.compiled, settingsData)
+        .replaceAll(replaceKeys.export, exportData)
+        .replaceAll(replaceKeys.values, values);
+    } else {
+      file = `${settingsData}\n${values}\n${exportData}`;
+    };
 
     writeFileSync(this.filePath, file, "utf-8");
 
     return file;
   }
   
+  private readFile() {
+    if (!this.config.writeInCompiler) return "";
+    if (!existsSync(this.filePath)) return "";
+    
+    return readFileSync(this.filePath, "utf-8");
+  };
+
   private createFile() {
-    if (existsSync(this.filePath)) unlinkSync(this.filePath);
+    if (this.config.writeInCompiler) return;
 
     writeFileSync(this.filePath, "", "utf-8");
   }
 
   private formatFile() {
+    if (!this.config.prettierOn) return;
+    
     childProcces.exec(`prettier ${this.filePath} -w`);
   }
 }
