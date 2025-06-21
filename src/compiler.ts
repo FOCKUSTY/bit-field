@@ -150,7 +150,7 @@ class Compiler<T extends string> {
     this.writeFile(this, values);
     this.formatFile();
 
-    return readFileSync(this.filePath);
+    return readFileSync(this.filePath, "utf-8");
   }
 
   public parse(type: T) {
