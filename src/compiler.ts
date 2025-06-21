@@ -3,7 +3,7 @@ import childProcces = require("child_process");
 import BitField, { BitBuilder } from "./index";
 
 import { join, parse } from "path";
-import { existsSync, unlinkSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 
 export type ConstArray<T> = T[] | readonly T[];
 export type ISettings<T extends string> = Record<T, ConstArray<string>>;
@@ -149,6 +149,8 @@ class Compiler<T extends string> {
     this.createFile();
     this.writeFile(this);
     this.formatFile();
+
+    return readFileSync(this.filePath);
   }
 
   public parse(type: T) {
