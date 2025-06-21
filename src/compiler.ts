@@ -119,7 +119,7 @@ class Compiler<T extends string> {
        * YOU WORKING WITH FILE SYSTEM, BE CAREFUL.
        * @recomendation PLEASE, USE DEFAULT METHOS.
        */
-      writeFile?: (me: Compiler<T>) => string;
+      writeFile?: (me: Compiler<T>, values?: string) => string;
       /**
        * - !! WARNING !!
        * - !! WARNING !!
@@ -188,7 +188,7 @@ class Compiler<T extends string> {
     );
   }
 
-  public writeFile(me: this) {
+  public writeFile(me: this, values: string = "") {
     const data = JSON.stringify(this.compile(me), undefined, 2)
       .replaceAll('"', "")
       .replaceAll("}", "} as const")
@@ -203,6 +203,7 @@ class Compiler<T extends string> {
       "\n */" +
       `\nexport const settings = ${data};` +
       "\n" +
+      "\n" + values + "\n" +
       "\nexport type Keys = keyof typeof settings;" +
       "\nexport type Settings<T extends Keys> = (typeof settings)[T];" +
       "\nexport type SettingsKeys<T extends Keys> = keyof Settings<T>;" +
