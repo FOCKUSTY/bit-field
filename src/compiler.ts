@@ -30,6 +30,37 @@ const defaultSettingsFormat = <T extends string>(
 
 /**
  * Compiler for `BitBuilder`'s values
+ * 
+ * ---
+ * 
+ * @constructor @settingsFormat
+ * Formattings settings value
+ * 
+ * @example
+ * input:
+ *   [ "SOME_VALUE_ONE", "SOME_VALUE_TWO", "SOME_DIRECTIVE__SOME_VALUE" ]
+ * output:
+ *   [ "someValueOne", "someValueTwo", "someDirectiveSomeValue" ]
+ * 
+ * @default
+ * (used in `@example`)
+ * ```ts
+ * const defaultSettingsFormat = <T extends string>(
+ * settings: T[] | readonly T[]
+ *  ) =>
+ *    settings.map((string: T) =>
+ *      capitilize(
+ *        string
+ *          .toLowerCase()
+ *          .replaceAll("__", " ")
+ *          .replaceAll("_", " ")
+ *          .split(" ")
+ *          .map((v) => capitilize(v))
+ *          .join("")
+ *      )
+ *    );
+ * ```
+ * 
  */  
 class Compiler<T extends string> {
   public readonly keys: T[];
@@ -65,7 +96,7 @@ class Compiler<T extends string> {
      *    );
      * ```
      */
-    public readonly settingsFormat: (settings: ISettings<T>[T]) => string[] = defaultSettingsFormat,
+    public readonly settingsFormat: (settings: ISettings<T>[T]) => string[]|readonly string[] = defaultSettingsFormat,
   ) {
     this.keys = Object.keys(settings) as T[];
     this.filePath = join(filePath);
