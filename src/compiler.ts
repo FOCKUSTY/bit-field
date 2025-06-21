@@ -119,7 +119,7 @@ class Compiler<T extends string> {
        * YOU WORKING WITH FILE SYSTEM, BE CAREFUL.
        * @recomendation PLEASE, USE DEFAULT METHOS.
        */
-      writeFile?: () => string;
+      writeFile?: (me: Compiler<T>) => string;
       /**
        * - !! WARNING !!
        * - !! WARNING !!
@@ -130,7 +130,7 @@ class Compiler<T extends string> {
        * YOU WORKING WITH FILE SYSTEM. BE CAREFUL.
        * @recomendation PLEASE, USE DEFAULT METHOS.
        */
-      compile?: () => string;
+      compile?: (me: Compiler<T>) => string;
     }
   ) {
     this.keys = Object.keys(settings) as T[];
@@ -147,7 +147,7 @@ class Compiler<T extends string> {
 
   public execute() {
     this.createFile();
-    this.writeFile();
+    this.writeFile(this);
     this.formatFile();
   }
 
@@ -161,7 +161,7 @@ class Compiler<T extends string> {
 
   public settingsFormat = defaultSettingsFormat;
 
-  public compile() {
+  public compile(me: this) {
     const settings = Object.fromEntries(
       this.keys.map((key) => [key, this.parse(key)]),
     );
@@ -186,8 +186,8 @@ class Compiler<T extends string> {
     );
   }
 
-  public writeFile() {
-    const data = JSON.stringify(this.compile(), undefined, 2)
+  public writeFile(me: this) {
+    const data = JSON.stringify(this.compile(me), undefined, 2)
       .replaceAll('"', "")
       .replaceAll("}", "} as const")
       .replaceAll("'\\n'", "\n")
