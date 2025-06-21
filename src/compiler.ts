@@ -7,13 +7,65 @@ import { existsSync, unlinkSync, writeFileSync } from "fs";
 
 type ISettings<T extends string> = Record<T, string[] | readonly string[]>;
 
+const format = (string: string, capitalize: boolean) =>
+  capitalize
+    ? string.charAt(0).toUpperCase() + string.slice(1)
+    : string.charAt(0).toLowerCase() + string.slice(1);
+
+const defaultSettingsFormat = <T extends string>(
+  settings: T[] | readonly T[]
+) =>
+  settings.map((string: T) =>
+    format(
+      string
+        .toLowerCase()
+        .replaceAll("__", " ")
+        .replaceAll("_", " ")
+        .split(" ")
+        .map((v) => format(v, true))
+        .join(""),
+      false
+    )
+  );
+
+/**
+ * Compiler for `BitBuilder`'s values
+ */  
 class Compiler<T extends string> {
   public readonly keys: T[];
 
   public constructor(
     public readonly settings: ISettings<T>,
     public readonly filePath: string,
-    public readonly format: (value: string) => string,
+    /**
+     * Formattings settings value
+     * 
+     * @example
+     * input:
+     *   [ "SOME_VALUE_ONE", "SOME_VALUE_TWO", "SOME_DIRECTIVE__SOME_VALUE" ]
+     * output:
+     *   [ "someValueOne", "someValueTwo", "someDirectiveSomeValue" ]
+     * 
+     * @default
+     * (used in `@example`)
+     * ```ts
+     * const defaultSettingsFormat = <T extends string>(
+     * settings: T[] | readonly T[]
+     *  ) =>
+     *    settings.map((string: T) =>
+     *      capitilize(
+     *        string
+     *          .toLowerCase()
+     *          .replaceAll("__", " ")
+     *          .replaceAll("_", " ")
+     *          .split(" ")
+     *          .map((v) => capitilize(v))
+     *          .join("")
+     *      )
+     *    );
+     * ```
+     */
+    public readonly settingsFormat: (settings: ISettings<T>[T]) => string[] = defaultSettingsFormat,
   ) {
     this.keys = Object.keys(settings) as T[];
     this.filePath = join(filePath);
@@ -30,7 +82,7 @@ class Compiler<T extends string> {
 
     if (settings.length === 0) return [];
 
-    return settings.map((string) => this.format(string));
+    return this.settingsFormat(settings);
   }
 
   private createFile() {
