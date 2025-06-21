@@ -168,12 +168,11 @@ class Compiler<T extends string> {
       this.keys.map((key) => [key, this.parse(key)]),
     );
 
-    let offset = 0n;
+    let offset = {};
     return Object.fromEntries(
       Object.keys(settings).map((key) => {
         const bits = new BitBuilder(settings[key]).execute(offset);
-
-        offset |= BitBuilder.resolve(bits);
+        offset = bits;
 
         return [
           key,
