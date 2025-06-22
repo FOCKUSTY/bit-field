@@ -1,5 +1,3 @@
-import childProcces = require("child_process");
-
 import BitField, { BitBuilder } from "./index";
 
 import { join, parse } from "path";
@@ -20,17 +18,15 @@ export type Config = {
    * @use `// ## { WRITE_COMPILED_HERE } ## \\`
    * to write compiled file where you need
    * 
+   * @use `// ## { COMPILED__WRITE_VALUES_HERE } ## \\`
+   * to write values where you need
+   * 
    * @use `// ## { WRITE_EXPORT_HERE } ## \\ `
    * to write export where you need
    * @default end of file
    * 
    */
   writeInCompiler: boolean,
-  /**
-   * switch on/off prettier for file
-   * @default true
-   */
-  prettierOn: boolean,
   /**
    * switch on/off default export in file
    * @default true
@@ -48,7 +44,7 @@ export const replaceKeys = {
     /(\/\/ ## { COMPILED__WRITE_EXPORT_HERE } ## \\\\[.\s\S]*\/\/ ## { COMPILED__WRITE_EXPORT_HERE } ## \\\\)|(\/\/ ## { WRITE_EXPORT_HERE } ## \\\\)/gi
   ],
   values: [
-    "// ## COMPILED__WRITE_VALUES_HERE ## \\\\",
+    "// ## { COMPILED__WRITE_VALUES_HERE } ## \\\\",
     /(\/\/ ## { COMPILED__WRITE_VALUES_HERE } ## \\\\[.\s\S]*\/\/ ## { COMPILED__WRITE_VALUES_HERE } ## \\\\)|(\/\/ ## { WRITE_VALUES_HERE } ## \\\\)/gi
   ]
 } as const;
@@ -117,7 +113,6 @@ class Compiler<T extends string> {
 
   public readonly config: Config = {
     name: "settings",
-    prettierOn: true,
     writeInCompiler: false,
     defaultExportOn: true
   };
@@ -193,7 +188,17 @@ class Compiler<T extends string> {
        * 
        * ---
        * 
-       * You working with compiler formatter options. be carefule.
+       * You working with compiler formatter options. be careful.
+       * @recomendation please, be careful.
+       */
+      formatFile: (me: Compiler<T>) => any;
+
+      /**
+       * - WARNING
+       * 
+       * ---
+       * 
+       * You working with compiler formatter options. be careful.
        * @recomendation please, use default method.
        */
       resolveForCompiled?: (me: Compiler<T>) => string;
@@ -240,7 +245,7 @@ class Compiler<T extends string> {
 
   public settingsFormat = defaultSettingsFormat;
 
-  public compile(me: this) {
+  public compile(me: this = this) {
     const settings = Object.fromEntries(
       this.keys.map((key) => [key, this.parse(key)]),
     );
@@ -264,8 +269,8 @@ class Compiler<T extends string> {
     );
   }
 
-  public resolveForCompiled(me: this) {
-    return JSON.stringify(this.compile(me), undefined, 2)
+  public resolveForCompiled(me: this = this) {
+    return JSON.stringify(this.compile(), undefined, 2)
       .replaceAll('"', "")
       .replaceAll("}", "} as const")
       .replaceAll("'\\n'", "\n")
@@ -275,13 +280,13 @@ class Compiler<T extends string> {
 
   /**
    * @param values
-   * @use `// ## WRITE_VALUES_HERE ## \\`
+   * @use `// ## { WRITE_VALUES_HERE } ## \\`
    * to write values where you need
    */
   public writeFile(
     me: this,
     /**
-     * @use `// ## WRITE_VALUES_HERE ## \\`
+     * @use `// ## { WRITE_VALUES_HERE } ## \\`
      * to write values where you need
      */
     values: string = ""
@@ -332,11 +337,7 @@ class Compiler<T extends string> {
     writeFileSync(this.filePath, "", "utf-8");
   }
 
-  private formatFile() {
-    if (!this.config.prettierOn) return;
-
-    childProcces.exec(`prettier ${this.filePath} -w`);
-  }
+  private formatFile(me: this = this) { };
 }
 
 export { Compiler };
