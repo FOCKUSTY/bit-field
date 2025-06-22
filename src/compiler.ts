@@ -191,7 +191,7 @@ class Compiler<T extends string> {
        * You working with compiler formatter options. be careful.
        * @recomendation please, be careful.
        */
-      formatFile: (me: Compiler<T>) => any;
+      formatFile?: (me: Compiler<T>) => any;
 
       /**
        * - WARNING
