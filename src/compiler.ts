@@ -306,7 +306,6 @@ class Compiler<T extends string> {
       `${this.config.defaultExportOn ? `\n\nexport default ${name};\n` : ""}`;
 
     if (this.config.writeInCompiler) {
-      console.log(this.readFile().match(replaceKeys.compiled[1]))
       file = this.readFile()
         .replaceAll(replaceKeys.compiled[1], formatToReplace("compiled", settingsData))
         .replaceAll(replaceKeys.export[1], formatToReplace("export", exportData))
