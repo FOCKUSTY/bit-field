@@ -94,13 +94,13 @@ class BitField {
    */
   public static max(...values: Bit[]): bigint {
     return BigInt(
-      values
-        .toSorted((a, b) => {
+      [...values]
+        .sort((a: Bit, b: Bit) => {
           const data = <const>[BigInt(a), BigInt(b)];
 
           return data[0] > data[1] ? 1 : data[0] < data[1] ? -1 : 0;
         })
-        .toReversed()[0],
+        .reverse()[0],
     );
   }
 
