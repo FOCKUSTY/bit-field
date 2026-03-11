@@ -1,16 +1,23 @@
 import type { ArrayOrType, Bit } from "./types";
 import { DEFAULT_BIT } from "./constants";
 
-class BitField {
+/**
+ * Утилитный класс для выполнения операций над битовыми полями.
+ * Все методы работают с BigInt, но принимают также number, string и boolean.
+ */
+export class BitField {
   /**
-   * compares two values
+   * Сравнивает два битовых значения на равенство.
+   *
+   * @param first - Первое значение
+   * @param second - Второе значение
+   * @returns `true`, если значения равны после приведения к BigInt
    *
    * @example
    * ```ts
    * BitField.equals(1n, 1n)  // true
    * BitField.equals(1n, "1") // true
    * BitField.equals(1n, 2n)  // false
-   * BitField.equals(1n, "2") // false
    * ```
    */
   public static equals(first: Bit, second: Bit): boolean {
@@ -18,15 +25,15 @@ class BitField {
   }
 
   /**
-   * summurize values
+   * Выполняет побитовое ИЛИ над всеми переданными значениями.
+   *
+   * @param bits - Одно или несколько значений
+   * @returns Результат побитового ИЛИ
    *
    * @example
    * ```ts
    * BitField.summarize(1n, 2n, 4n) // 7n
    * BitField.summarize(2n, 2n, 4n) // 6n
-   * BitField.summarize(1n, 4n) // 5n
-   * BitField.summarize(1n, 1n) // 1n
-   * BitField.summarize(1n) // 1n
    * ```
    */
   public static summarize(...bits: Bit[]): bigint {
@@ -38,31 +45,32 @@ class BitField {
   }
 
   /**
-   * summurize values
+   * Добавляет биты к указанному значению (псевдоним для `summarize` с обязательным первым аргументом).
+   *
+   * @param bit - Базовое значение
+   * @param add - Добавляемые биты
+   * @returns Результат побитового ИЛИ `bit` и всех `add`
    *
    * @example
    * ```ts
    * BitField.add(1n, 2n, 4n) // 7n
-   * BitField.add(2n, 2n, 4n) // 6n
-   * BitField.add(1n, 4n) // 5n
-   * BitField.add(1n, 1n) // 1n
    * ```
-   *
-   * @equals `BitField.add(1n, 2n)` === `Bitiield.summarize([1n, 2n...])`
    */
   public static add(bit: Bit, ...add: Bit[]): bigint {
     return BigInt(bit) | BitField.summarize(...add);
   }
 
   /**
-   * subtract values
+   * Удаляет указанные биты из значения (сбрасывает соответствующие биты).
+   *
+   * @param bit - Исходное значение
+   * @param remove - Биты, которые нужно сбросить
+   * @returns Новое значение с удалёнными битами
    *
    * @example
    * ```ts
    * BitField.remove(7n, 4n, 2n) // 1n
    * BitField.remove(14n, 4n, 2n) // 8n
-   * BitField.remove(14n, 4n, 2n, 1n) // 8n
-   * BitField.remove(14n, 1n) // 14n
    * ```
    */
   public static remove(bit: Bit, ...remove: Bit[]): bigint {
@@ -70,14 +78,15 @@ class BitField {
   }
 
   /**
-   * takes the logarithm of a number
+   * Возвращает целую часть двоичного логарифма числа (индекс старшего установленного бита).
+   *
+   * @param bigint - Значение
+   * @returns Индекс старшего бита (начиная с 0)
    *
    * @example
    * ```ts
    * BitField.logarithm2(1n << 10n) // 10n
-   * BitField.logarithm2(1n << MULTIPLIER) // MULTIPLIER
    * BitField.logarithm2(2n << 10n) // 11n
-   * BitField.logarithm2(4n << 10n) // 12n
    * ```
    */
   public static logarithm2(bigint: Bit): bigint {
@@ -85,7 +94,10 @@ class BitField {
   }
 
   /**
-   * takes max value of values
+   * Возвращает максимальное значение из переданных.
+   *
+   * @param values - Список значений
+   * @returns Наибольшее BigInt
    *
    * @example
    * ```ts
@@ -97,43 +109,45 @@ class BitField {
       [...values]
         .sort((a: Bit, b: Bit) => {
           const data = <const>[BigInt(a), BigInt(b)];
-
           return data[0] > data[1] ? 1 : data[0] < data[1] ? -1 : 0;
         })
         .reverse()[0],
     );
   }
 
+  /**
+   * Создаёт экземпляр битового поля с начальным значением.
+   *
+   * @param bits - Начальное значение (по умолчанию 0n)
+   */
   public constructor(public readonly bits: Bit = DEFAULT_BIT) {
     this.bits = BigInt(bits);
   }
 
   /**
-   * summurize values
+   * Добавляет биты к текущему значению и возвращает новое.
+   *
+   * @param bits - Добавляемые биты
+   * @returns Новое значение (исходный объект не изменяется)
    *
    * @example
    * ```ts
    * new BitField(1n).add(2n, 4n) // 7n
-   * new BitField(2n).add(2n, 4n) // 6n
-   * new BitField(1n).add(4n) // 5n
-   * new BitField(1n).add(1n) // 1n
    * ```
-   *
-   * @equals `new BitField(1n).add(2n)` === `Bitiield.summarize([1n, 2n...])`
    */
   public add(...bits: Bit[]): bigint {
     return BitField.add(this.bits, ...bits);
   }
 
   /**
-   * subtract values
+   * Удаляет биты из текущего значения и возвращает новое.
+   *
+   * @param bits - Удаляемые биты
+   * @returns Новое значение (исходный объект не изменяется)
    *
    * @example
    * ```ts
    * new BitField(7n).remove(4n, 2n) // 1n
-   * new BitField(14n).remove(4n, 2n) // 8n
-   * new BitField(14n).remove(4n, 2n, 1n) // 8n
-   * new BitField(14n).remove(1n) // 14n
    * ```
    */
   public remove(...bits: Bit[]): bigint {
@@ -141,23 +155,20 @@ class BitField {
   }
 
   /**
-   * checking bits equals
+   * Проверяет, равно ли текущее значение побитовому ИЛИ переданных битов.
+   *
+   * @param bits - Проверяемые биты
+   * @returns `true`, если текущее значение в точности равно комбинации битов
    *
    * @example
    * ```ts
    * new BitField(1n).has(1n)  // true
-   * new BitField(1n).has("1") // true
    * new BitField(1n).has(2n)  // false
-   * new BitField(1n).has("2") // false
    * ```
-   *
-   * @equals `new BitField(1n).has(2n)` === `BitField.equals(1n, 2n)`
    */
   public has(...bits: Bit[]): boolean {
     return BitField.equals(this.bits, BitField.summarize(...bits));
   }
 }
-
-export { BitField };
 
 export default BitField;

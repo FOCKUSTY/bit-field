@@ -1,46 +1,63 @@
 {
   "name": "fbit-field",
-  "version": "1.4.0-alpha.1c",
-  "description": "bit field for some systems",
-  "main": "index.js",
-  "types": "index.d.ts",
-  "scripts": {
-    "build": "tsc && fockbuilder",
-    "test": "ts-mocha ./src/test/**/*.test.ts"
-  },
+  "version": "2.0.0",
+  "description": "A lightweight TypeScript library for managing bit fields using BigInt — ideal for permissions, feature flags, and configuration systems.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "./**/*.js",
-    "./**/*.js.map",
-    "./**/*.d.ts",
-    "./**/*.d.ts.map",
-    "./**/*.json",
-    "!./**/test/",
+    "dist",
     "LICENSE",
     "README.md"
   ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./compiler": {
+      "types": "./dist/compiler.d.ts",
+      "import": "./dist/compiler.js",
+      "require": "./dist/compiler.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "npm run clean",
+    "build": "tsc",
+    "test": "ts-mocha ./src/test/**/*.test.ts",
+    "prepublishOnly": "npm run build",
+    "prepare": "npm run build"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/FOCKUSTY/bit-field.git"
+    "url": "git+https://github.com/FOCKUSTY/bit-field.git"
   },
   "keywords": [
     "bitfield",
     "bit",
-    "bits"
+    "bits",
+    "bigint",
+    "permissions",
+    "flags",
+    "typescript"
   ],
   "author": {
     "name": "FOCKUSTY",
     "email": "viserd.yt@gmail.com",
-    "url": "https://fockusty.netlify.app/"
+    "url": "https://fockusty.vercel.app/"
   },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/FOCKUSTY/bit-field/issues"
   },
   "homepage": "https://github.com/FOCKUSTY/bit-field#readme",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.0.3",
-    "fock-builder": "^2.1.0-beta.1",
     "mocha": "^11.7.0",
     "ts-mocha": "^11.1.0",
     "ts-node": "^10.9.2",

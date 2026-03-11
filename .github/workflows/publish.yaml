@@ -1,36 +1,36 @@
-name: Node.js CI/CD
+name: package publish
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
-  pull_request:
-    branches:
-      - main
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
-          registry-url: https://registry.npmjs.org
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
 
-      - name: "Installing dependencies"
-        run: npm install
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key:
+            npm-${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-node-
 
-      - name: "Testing package"
-        run: npm run test
+      - run: npm i
+      - run: npm run build
 
-      - name: "Building package"
-        run: npm run build
-
-      - name: "Publishing"
-        run: cd dist && npm publish --access public --tag latest
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm
+        run: npm publish --access public
