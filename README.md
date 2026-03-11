@@ -236,6 +236,10 @@ const compiler = new Compiler(settings, "./output.ts", {
 
 ---
 
+## Более подробная документация
+
+- Читайте [тут](./DETAILED.md)
+
 ## Лицензия
 
 MIT © FOCKUSTY
