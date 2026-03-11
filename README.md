@@ -30,9 +30,9 @@ npm install fbit-field
 Сравнивает два битовых значения (приводит к `bigint`) на равенство.
 
 ```ts
-BitField.equals(1n, 1n);   // true
-BitField.equals(1n, "1");   // true
-BitField.equals(1n, 2n);    // false
+BitField.equals(1n, 1n); // true
+BitField.equals(1n, "1"); // true
+BitField.equals(1n, 2n); // false
 ```
 
 #### `BitField.summarize(...bits: Bit[]): bigint`
@@ -108,8 +108,8 @@ field.remove(2n); // 1n (поле было 1n, удаление 2n ничего 
 Проверяет, равно ли текущее значение побитовому ИЛИ переданных битов.
 
 ```ts
-field.has(1n);        // true
-field.has(1n, 2n);    // false, если поле не равно 1|2
+field.has(1n); // true
+field.has(1n, 2n); // false, если поле не равно 1|2
 ```
 
 ---
@@ -150,13 +150,13 @@ BitBuilder.resolve(perms); // 3n
 **Возвращает**: объект, отображающий имя в его `bigint`-значение.
 
 ```ts
-const builder = new BitBuilder(['READ', 'WRITE', 'DELETE']);
+const builder = new BitBuilder(["READ", "WRITE", "DELETE"]);
 const bits = builder.execute(10n);
 // { READ: 1n << 10n, WRITE: 1n << 11n, DELETE: 1n << 12n }
 
 // Использование ранее сгенерированного объекта
 const first = builder.execute(); // начинается с 0n
-const second = new BitBuilder(['EXECUTE']).execute(first); // следующий свободный бит
+const second = new BitBuilder(["EXECUTE"]).execute(first); // следующий свободный бит
 ```
 
 #### `resolve(bits: IObject): bigint`
@@ -175,9 +175,9 @@ const second = new BitBuilder(['EXECUTE']).execute(first); // следующий
 
 ```ts
 type Config = {
-  name: string;               // Имя генерируемого объекта-константы (по умолчанию 'settings')
-  writeInCompiler: boolean;    // Если true – изменяет существующий файл, используя специальные комментарии
-  defaultExportOn: boolean;    // Добавлять ли экспорт по умолчанию (по умолчанию true)
+  name: string; // Имя генерируемого объекта-константы (по умолчанию 'settings')
+  writeInCompiler: boolean; // Если true – изменяет существующий файл, используя специальные комментарии
+  defaultExportOn: boolean; // Добавлять ли экспорт по умолчанию (по умолчанию true)
 };
 ```
 
@@ -190,17 +190,22 @@ type Config = {
 ### Использование
 
 ```ts
-import { Compiler } from 'fbit-field';
+import { Compiler } from "fbit-field";
 
 const settings = {
-  permissions: ['READ', 'WRITE', 'DELETE'],
-  roles: ['ADMIN', 'USER', 'GUEST']
+  permissions: ["READ", "WRITE", "DELETE"],
+  roles: ["ADMIN", "USER", "GUEST"],
 };
 
-const compiler = new Compiler(settings, './output.ts', {}, {
-  name: 'mySettings',
-  defaultExportOn: true
-});
+const compiler = new Compiler(
+  settings,
+  "./output.ts",
+  {},
+  {
+    name: "mySettings",
+    defaultExportOn: true,
+  },
+);
 
 compiler.execute(); // создаст файл output.ts со сгенерированными константами
 ```
@@ -210,13 +215,9 @@ compiler.execute(); // создаст файл output.ts со сгенериро
 Вы можете переопределить стандартное форматирование имён (которое преобразует `SOME_NAME` в `someName`), передав функцию `settingsFormat` в параметре `methods` конструктора.
 
 ```ts
-const compiler = new Compiler(
-  settings,
-  './output.ts',
-  {
-    settingsFormat: (arr) => arr.map(s => s.toLowerCase()) // оставить как есть, в нижнем регистре
-  }
-);
+const compiler = new Compiler(settings, "./output.ts", {
+  settingsFormat: (arr) => arr.map((s) => s.toLowerCase()), // оставить как есть, в нижнем регистре
+});
 ```
 
 **Внимание:** объект `methods` также позволяет переопределить `writeFile`, `compile` и другие методы. Используйте осторожно – они напрямую работают с файловой системой.

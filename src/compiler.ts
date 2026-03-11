@@ -295,10 +295,7 @@ export class Compiler<T extends string> {
           replaceKeys.export[1],
           formatToReplace("export", exportData),
         )
-        .replaceAll(
-          replaceKeys.values[1],
-          formatToReplace("values", values),
-        );
+        .replaceAll(replaceKeys.values[1], formatToReplace("values", values));
     } else {
       file = `${formatToReplace("compiled", settingsData)}\n${formatToReplace("values", values)}\n${formatToReplace("export", exportData)}`;
     }
