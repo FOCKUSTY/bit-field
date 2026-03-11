@@ -23,11 +23,8 @@
     }
   },
   "scripts": {
-    "prebuild": "npm run clean",
     "build": "tsc",
-    "test": "ts-mocha ./src/test/**/*.test.ts",
-    "prepublishOnly": "npm run build",
-    "prepare": "npm run build"
+    "test": "ts-mocha ./src/test/**/*.test.ts"
   },
   "repository": {
     "type": "git",
