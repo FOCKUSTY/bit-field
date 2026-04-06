@@ -1,8 +1,11 @@
-name: package publish
+name: Publish Package
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+    tags:
+      - "v*"
 
 permissions:
   id-token: write
@@ -30,6 +33,9 @@ jobs:
 
       - run: npm i
       - run: npm run build
+
+      - name: Dry-run publish (optional)
+        run: npm publish --access public --dry-run
 
       - name: Publish to npm
         run: npm publish --access public
