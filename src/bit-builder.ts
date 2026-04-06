@@ -1,100 +1,139 @@
-import { DEFAULT_BIT } from "./constants";
-import BitField from "./bit-field";
+import type { BigIntRecord, BuilderBitData } from "./types";
+
+import { ONE_BIT, ZERO_BIT } from "./constants";
+import { BitFieldOperations } from "./bit-field-operations";
 
 /**
- * Объект с именованными битовыми значениями.
- */
-type IObject = { [key: string]: bigint } | { readonly [key: string]: bigint };
-
-/**
- * Генерирует набор битовых значений для списка имён с возможностью управления смещениями.
+ * Генерирует набор битовых значений для списка имён с автоматическим смещением.
  *
- * @typeParam T - Тип (строковое литералы) имён битов
+ * @template T - Строковые литералы имён битов (например, `'READ' | 'WRITE'`).
+ *
+ * @example
+ * ```ts
+ * const builder = new BitBuilder(['READ', 'WRITE']);
+ * const bits = builder.execute(); // { READ: 1n << 0n, WRITE: 1n << 1n }
+ * ```
  */
-export class BitBuilder<T extends string> {
+export class BitBuilder<const T extends string> {
   /**
-   * @param bits - Массив имён будущих битов
+   * @param bits - Массив имён битов в порядке их следования.
    */
-  public constructor(public readonly bits: T[] | Readonly<T[]>) {}
+  public constructor(public readonly bits: T[]) {}
 
   /**
-   * Статический метод для суммирования объекта битов.
+   * Объединяет объект именованных битов в одно число (побитовое ИЛИ).
    *
-   * @param bits - Объект с именованными битами
-   * @returns Объединённое битовое значение
+   * @param bits - Объект, где значения — битовые флаги.
+   * @returns Результат побитового ИЛИ всех переданных значений.
+   *
+   * @example
+   * ```ts
+   * const flags = { READ: 1n, WRITE: 2n };
+   * const combined = BitBuilder.resolve(flags); // 3n
+   * ```
    */
-  public static resolve(bits: IObject): bigint {
-    return BitField.summarize(...Object.values(bits));
+  public static resolve(bits: BigIntRecord): bigint {
+    return BitFieldOperations.summarize(...Object.values(bits));
   }
 
   /**
-   * Генерирует объект с битовыми значениями для каждого имени из `bits`,
-   * применяя смещение и фильтры исключения/включения.
+   * Генерирует объект с битовыми значениями для каждого имени из `bits`.
    *
-   * @param offset - Начальное смещение (число BigInt) или объект ранее сгенерированных битов.
-   *                 Если передан объект, следующее свободное смещение вычисляется как
-   *                 `max(значения) + 1`.
-   * @param exclude - Массив имён, которые должны получить нулевое значение.
-   * @param include - Если указан, только эти имена получат ненулевые значения (остальные — 0).
-   * @returns Объект вида `{ [имя]: битовое значение }`
+   * @param data - Настройки генерации (необязательно).
+   * @param data.offset - Начальное смещение (число) или объект ранее сгенерированных битов.
+   *                      При передаче объекта следующий свободный бит вычисляется как
+   *                      `log2(max(значения)) + 1`. По умолчанию `0n`.
+   * @param data.exclude - Имена, которые получат нулевое значение (имеют приоритет над `include`).
+   * @param data.include - Если указан, только эти имена получат ненулевые значения.
+   * @returns Объект с битовыми значениями для каждого имени.
    *
    * @example
    * ```ts
    * const builder = new BitBuilder(['READ', 'WRITE']);
-   * builder.execute(10n);
-   * // { READ: 1n << 10n, WRITE: 1n << 11n }
+   * builder.execute({ offset: 10n });        // { READ: 1n<<10n, WRITE: 1n<<11n }
    *
-   * // с объектом в качестве смещения
-   * const first = builder.execute();
-   * const second = new BitBuilder(['EXECUTE']).execute(first);
-   * // EXECUTE получит следующий свободный бит
+   * const first = builder.execute();         // { READ: 1n<<0n, WRITE: 1n<<1n }
+   * const second = new BitBuilder(['EXECUTE']).execute({ offset: first }); // { EXECUTE: 1n<<2n }
    * ```
    */
-  public execute(
-    offset: bigint | IObject = DEFAULT_BIT,
-    exclude: T[] | readonly T[] = [],
-    include?: T[] | readonly T[],
-  ): Record<T, bigint> {
-    return Object.fromEntries(
-      this.bits.map((bit, index) => {
-        const modifier = this.resolveOffset(offset) + BigInt(index);
+  public execute(data?: Partial<BuilderBitData<T>>): Record<T, bigint> {
+    const bits = this.bits.map((bit, index) => {
+      const computedBit = this.computeBit({
+        bit,
+        index,
+        offset: ZERO_BIT,
+        exclude: [],
+        ...(data || {}),
+      });
+      return [bit, computedBit];
+    });
 
-        if (include && !include.includes(bit))
-          return [bit, DEFAULT_BIT << modifier];
-        if (exclude.includes(bit)) return [bit, DEFAULT_BIT << modifier];
-
-        return [bit, 1n << modifier];
-      }),
-    ) as Record<T, bigint>;
+    return Object.fromEntries(bits);
   }
 
   /**
-   * Экземплярный метод для суммирования объекта битов.
+   * Экземплярный вариант статического метода `resolve`.
    *
-   * @param bits - Объект с именованными битами
-   * @returns Объединённое битовое значение
+   * @param bits - Объект с битовыми значениями.
+   * @returns Побитовое ИЛИ всех значений.
    */
-  public resolve(bits: IObject) {
+  public resolve(bits: BigIntRecord): bigint {
     return BitBuilder.resolve(bits);
   }
 
   /**
-   * Вычисляет итоговое смещение: если передан объект, возвращает следующий свободный бит,
-   * иначе возвращает само смещение.
+   * Вычисляет значение для одного бита с учётом смещения, исключений и включений.
    *
-   * @param offset - Смещение (число или объект)
-   * @returns Число BigInt — смещение для первого бита
-   * @internal
+   * @param params - Параметры вычисления.
+   * @returns Битовое значение (0 или 1 сдвинутое на нужную позицию).
    */
-  private resolveOffset(offset: bigint | IObject): bigint {
-    if (typeof offset === "bigint") return offset;
+  private computeBit({
+    bit,
+    exclude,
+    index,
+    offset,
+    include,
+  }: {
+    bit: T;
+    index: number;
+  } & BuilderBitData<T>): bigint {
+    const modifier = this.resolveOffset(offset) + BigInt(index);
+    const excluded = exclude.includes(bit);
+    const included = (() => {
+      if (include) {
+        return include.includes(bit);
+      }
+      return true;
+    })();
+
+    if (excluded || !included) {
+      return ZERO_BIT << modifier;
+    }
+    return ONE_BIT << modifier;
+  }
+
+  /**
+   * Вычисляет итоговое смещение для первого бита.
+   *
+   * @param offset - Число (BigInt) или объект ранее сгенерированных битов.
+   * @returns Смещение как BigInt.
+   */
+  private resolveOffset(offset: bigint | BigIntRecord): bigint {
+    if (typeof offset === "bigint") {
+      return offset;
+    }
 
     const keys = Object.keys(offset);
-    if (keys.length === 0) return DEFAULT_BIT;
+    if (keys.length === 0) {
+      return ZERO_BIT;
+    }
 
-    return (
-      BitField.logarithm2(BitField.max(...keys.map((key) => offset[key]))) + 1n
-    );
+    const bits = keys.map((key) => offset[key]);
+    const maxBit = BitFieldOperations.max(...bits);
+    if (maxBit === ZERO_BIT) {
+      return ZERO_BIT;
+    }
+    return BitFieldOperations.logarithm2(maxBit) + ONE_BIT;
   }
 }
 

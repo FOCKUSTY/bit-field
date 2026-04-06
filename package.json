@@ -1,7 +1,7 @@
 {
   "name": "fbit-field",
-  "version": "2.0.1",
-  "description": "A lightweight TypeScript library for managing bit fields using BigInt — ideal for permissions, feature flags, and configuration systems.",
+  "version": "3.0.0-alpha",
+  "description": "Мощная TypeScript-библиотека для работы с битовыми полями на BigInt. Идеально подходит для прав доступа, флагов функций, переключателей и компактного хранения множества состояний.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -17,11 +17,13 @@
       "require": "./dist/index.js"
     },
     "./compiler": {
-      "types": "./dist/compiler.d.ts",
-      "import": "./dist/compiler.js",
-      "require": "./dist/compiler.js"
+      "types": "./dist/compiler/index.d.ts",
+      "import": "./dist/compiler/index.js",
+      "require": "./dist/compiler/index.js"
     }
   },
+  "sideEffect": false,
+  "module": "commonjs",
   "scripts": {
     "build": "tsc",
     "test": "ts-mocha ./src/test/**/*.test.ts"
@@ -32,12 +34,16 @@
   },
   "keywords": [
     "bitfield",
-    "bit",
-    "bits",
-    "bigint",
-    "permissions",
+    "bit-field",
+    "bitmask",
+    "bit-flag",
     "flags",
-    "typescript"
+    "permissions",
+    "rbac",
+    "feature-toggle",
+    "bigint",
+    "typescript",
+    "bit-manipulation"
   ],
   "author": {
     "name": "FOCKUSTY",
@@ -58,7 +64,6 @@
     "mocha": "^11.7.0",
     "ts-mocha": "^11.1.0",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.2"
   }
 }

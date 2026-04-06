@@ -1,180 +1,324 @@
-# Документация по BitBuilder и Compiler (fbit-field)
+# Детальная документация fbit-field
 
-## Введение
+## Содержание
 
-**fbit-field** — это библиотека для работы с битовыми полями на TypeScript/JavaScript с использованием `bigint`. Она предоставляет два основных инструмента для генерации и поддержки битовых флагов:
-
-- **`BitBuilder`** — позволяет создавать наборы именованных битовых значений с автоматическим управлением смещениями.
-- **`Compiler`** — генерирует TypeScript-файл с константами и типами на основе конфигурации, что особенно удобно для систем прав доступа, где нужно поддерживать много категорий и избегать ручного пересчёта битов.
-
-В этом руководстве мы разберём их использование на примере файла `rights.types.ts`, который вы привели.
-
----
-
-## BitBuilder
-
-### Назначение
-
-`BitBuilder` берёт список имён будущих битов (например, `['READ', 'WRITE']`) и генерирует объект вида `{ READ: 1n << N, WRITE: 1n << N+1 }`. Он также умеет учитывать уже занятые биты из другого объекта, чтобы избежать коллизий.
-
-### Конструктор
-
-```ts
-new BitBuilder<T extends string>(bits: T[] | readonly T[])
-```
-
-- `bits` — массив строк, определяющих имена битов в данной категории.
-
-### Метод `execute`
-
-```ts
-execute(
-  offset?: bigint | IObject,
-  exclude?: T[] | readonly T[],
-  include?: T[] | readonly T[]
-): Record<T, bigint>
-```
-
-- **`offset`** — может быть:
-  - **`bigint`** — начальный индекс, с которого начнётся отсчёт (первый бит получит значение `1n << offset`).
-  - **объект** вида `{ имя: bigint }` — тогда следующий свободный бит вычисляется как `log2(max(значения)) + 1n`. Это позволяет автоматически продолжать нумерацию после предыдущей категории.
-- **`exclude`** — массив имён, которые **не должны** получать ненулевое значение (им будет присвоен `0n`).
-- **`include`** — если указан, только имена из этого массива получат ненулевые значения (остальные — `0n`). `exclude` имеет более высокий приоритет, чем `include`.
-
-Возвращает объект, где ключи — имена из `bits`, а значения — соответствующие степени двойки (или `0n`).
-
-### Метод `resolve`
-
-```ts
-resolve(bits: IObject): bigint
-```
-
-Принимает объект, подобный возвращаемому `execute`, и возвращает объединённое битовое значение (побитовое ИЛИ всех значений). По сути, это просто вызов `BitField.summarize(...Object.values(bits))`.
-
-### Пример из `rights.types.ts`
-
-```ts
-const builder = new BitBuilder(ALL);            // ALL — массив имён прав
-export const AVAILABLE: My = builder.execute(0n); // начинаем с 0n, все права активны
-export const DEFAULT: My = builder.execute(0n, My.EXCLUDE); // исключаем некоторые права (они = 0n)
-```
-
-Здесь для категории `My` мы создаём два набора: **`AVAILABLE`** (все возможные права) и **`DEFAULT`** (те же права, но без некоторых, перечисленных в `EXCLUDE`). При передаче `0n` в качестве смещения первый бит получит `1n << 0n = 1n`, второй — `1n << 1n = 2n` и т.д.
-
-Далее для категории `Posts` мы передаём в `execute` уже не число, а объект `My.AVAILABLE`:
-
-```ts
-export const AVAILABLE: Posts = builder.execute(My.AVAILABLE);
-```
-
-`BitBuilder` автоматически вычислит следующий свободный бит после всех прав из `My` и начнёт нумерацию прав `Posts` с него. Это гарантирует, что биты разных категорий не пересекутся.
-
-Аналогично для `Organizations` передаётся `Posts.AVAILABLE`.
-
-Метод `resolve` используется для получения суммарных значений:
-
-```ts
-export const RAW_AVAILABLE = builder.resolve(AVAILABLE);
-export const RAW_DEFAULT = builder.resolve(DEFAULT);
-```
-
-Здесь `RAW_AVAILABLE` — это одно большое число, представляющее комбинацию всех прав данной категории.
+1. [Класс BitField](#класс-bitfield)
+2. [Класс BitFieldView](#класс-bitfieldview)
+3. [Класс BitFieldOperations](#класс-bitfieldoperations)
+4. [Класс BitBuilder](#класс-bitbuilder)
+5. [Компилятор (Compiler, CodeGenerator, FileManager)](#компилятор)
+6. [Типы и константы](#типы-и-константы)
+7. [Примеры](#примеры)
 
 ---
 
-## Compiler
+## Класс BitField
 
-### Назначение
-
-`Compiler` автоматизирует создание TypeScript-файла с константами на основе конфигурации. Он анализирует структуру, которую вы подготовили с помощью `BitBuilder`, и генерирует объект с явными битовыми значениями (например, `1n << 10n`) и соответствующие типы. Это избавляет от необходимости писать сотни строк вручную и гарантирует актуальность при изменении набора прав.
+Основной класс для работы с битовым полем. Наследует `BitFieldView`.
 
 ### Конструктор
 
-```ts
-new Compiler<T extends string>(
-  settings: ISettings<T>,      // объект вида { категория: ["право1", "право2"] }
-  filePath: string,            // путь к файлу, куда будет записан результат
-  methods?: { ... },           // необязательные пользовательские методы
-  config?: Partial<Config>     // опции компиляции
-)
+```typescript
+constructor(bit: BitFieldInput = 0n)
 ```
 
-- **`settings`** — например, полученный из `CONSTANTS.object.available`:
+- `bit` – может быть `bigint`, `number`, `string`, `boolean` или экземпляр `BitField`.
 
-```ts
-const rights = {
-  my: ["administrator", "moderator", ...],
-  posts: ["owner", "manager", ...],
-  organizations: ["owner", "administrator", ...]
-};
+### Статические методы
+
+| Метод | Описание |
+|-------|----------|
+| `static fromBinary(binaryString: string): BitField` | Создаёт поле из двоичной строки (например, `"1010"`). |
+| `static fromHex(hexString: string): BitField` | Создаёт поле из шестнадцатеричной строки (например, `"a"`). |
+
+### Свойства
+
+| Свойство | Тип | Описание |
+|----------|-----|----------|
+| `bit` | `bigint` | Текущее значение поля (только чтение). |
+
+### Методы (возвращают новый `BitField`)
+
+| Метод | Описание |
+|-------|----------|
+| `clone(): BitField` | Копия. |
+| `set(bit: BitFieldInput): BitField` | Заменяет значение. |
+| `add(...bits: MustArray<BitFieldInput>): BitField` | Устанавливает переданные биты. |
+| `remove(...bits: MustArray<BitFieldInput>): BitField` | Сбрасывает переданные биты. |
+| `clear(): BitField` | Обнуляет поле. |
+| `and(bit: BitFieldInput): BitField` | Побитовое И. |
+| `or(bit: BitFieldInput): BitField` | Побитовое ИЛИ. |
+| `xor(bit: BitFieldInput): BitField` | Побитовое исключающее ИЛИ. |
+| `not(bitLength?: number): BitField` | Побитовое НЕ с маскированием по `bitLength`. |
+| `shiftLeft(bits: number): BitField` | Сдвиг влево. |
+| `shiftRight(bits: number): BitField` | Сдвиг вправо (беззнаковый). |
+| `setRange(from: number, to: number): BitField` | Устанавливает все биты в диапазоне `[from, to]`. |
+| `clearRange(from: number, to: number): BitField` | Сбрасывает все биты в диапазоне. |
+
+### Методы проверки
+
+| Метод | Возвращает | Описание |
+|-------|------------|----------|
+| `equals(bit: BitFieldInput): boolean` | `boolean` | Равенство значений. |
+| `isSubsetOf(bit: BitFieldInput): boolean` | `boolean` | Все ли биты текущего поля присутствуют в `bit`. |
+| `hasOne(bit: BitFieldInput): boolean` | `boolean` | Установлен ли указанный бит (или все биты маски). |
+| `hasSome(...bits: MustArray<BitFieldInput>): boolean` | `boolean` | Установлен ли хотя бы один из переданных битов. |
+| `has(...bits: MustArray<BitFieldInput>): boolean` | `boolean` | Установлены ли все переданные биты. |
+| `hasRange(from: number, to: number): boolean` | `boolean` | Установлены ли все биты диапазона. |
+
+### Прочие методы
+
+| Метод | Описание |
+|-------|----------|
+| `getLowestSetBit(): bigint \| null` | Возвращает значение младшего установленного бита (`1n << k`) или `null`, если поле равно нулю. |
+| `getHighestSetBit(): bigint \| null` | Возвращает значение старшего установленного бита. |
+
+### Пример
+
+```typescript
+const bf = new BitField(0b1100);
+console.log(bf.getLowestSetBit()); // 1n << 2n (4)
+console.log(bf.getHighestSetBit()); // 1n << 3n (8)
+
+const bf2 = bf.add(0b0010); // 0b1110
+console.log(bf2.hasRange(1, 2)); // true (биты 1 и 2 установлены)
 ```
 
-- **`config`**:
-  - `name` — имя генерируемой константы (по умолчанию `"settings"`).
-  - `writeInCompiler` — если `true`, компилятор будет искать в указанном файле специальные маркеры и **заменять** их на сгенерированный код. Если `false` — файл будет создан заново (или перезаписан).
-  - `defaultExportOn` — добавлять ли `export default`.
+---
 
-### Специальные маркеры
+## Класс BitFieldView
 
-При `writeInCompiler: true` в файле должны присутствовать строки-маркеры, которые компилятор заменит на сгенерированный код:
+Абстрактный класс, предоставляющий методы преобразования и итерации.  
+`BitField` наследует их.
 
-- **`// ## { WRITE_COMPILED_HERE } ## \\`** — сюда будет вставлен объект с константами (например, `export const raw = { ... }`).
-- **`// ## { WRITE_EXPORT_HERE } ## \\`** — сюда будут вставлены экспорты типов.
-- **`// ## { WRITE_VALUES_HERE } ## \\`** — для пользовательских значений (передаётся параметром в `execute`).
+### Методы
 
-В вашем примере файл `rights.types.ts` содержит эти маркеры, что позволяет компилятору обновлять только нужные участки, сохраняя ручные правки в остальной части файла.
+| Метод | Описание |
+|-------|----------|
+| `toArray(): bigint[]` | Массив значений установленных битов (каждый как `1n << k`). |
+| `forEach(callback: (bit: bigint) => void): void` | Выполняет callback для каждого установленного бита. |
+| `toJSON(): string` | Возвращает десятичную строку (для `JSON.stringify`). |
+| `toHexString(): string` | Шестнадцатеричное представление без префикса. |
+| `toBinaryString(): string` | Двоичное представление. |
+| `toNumber(): number` | Опасно для значений > 2^53. |
+| `toString(): string` | Десятичная строка. |
+| `[Symbol.iterator]()` | Итератор по установленным битам (от младшего к старшему). |
 
-### Процесс компиляции
+### Пример
 
-Обычно компилятор запускают по условию, например, при определённом значении `NODE_ENV`:
+```typescript
+const bf = new BitField(0b1011);
+for (const bit of bf) {
+  console.log(bit.toString(2)); // "1", "10", "1000" (но в bigint)
+}
+// или
+bf.forEach(bit => console.log(bit));
+```
 
-```ts
-if (process.env.NODE_ENV === "rights_compile") {
-  new Compiler(rights, __dirname + "/rights.types.ts", {}, {
-    writeInCompiler: true,
-    defaultExportOn: false,
-    name: "raw",
-  }).execute();
+---
+
+## Класс BitFieldOperations
+
+Статический класс с утилитами для низкоуровневой работы.
+
+| Метод | Описание |
+|-------|----------|
+| `toBigInt(bit: BitFieldInput): bigint` | Приведение к `bigint`. |
+| `equals(first, second): boolean` | Сравнение. |
+| `notEquals(first, second): boolean` | Обратное сравнение. |
+| `summarize(...bits): bigint` | Побитовое ИЛИ всех аргументов. |
+| `add(bit, ...add): bigint` | `bit \| OR(add)`. |
+| `remove(bit, ...remove): bigint` | `bit & ~OR(remove)`. |
+| `logarithm2(bit): bigint` | floor(log2(x)) для x > 0. |
+| `max(...bits): bigint` | Максимальное значение. |
+| `maskOfLength(bits: number): bigint` | Маска из `bits` младших единиц. |
+| `maskRange(from: number, length: number): bigint` | Маска, начиная с позиции `from`, длиной `length`. |
+
+---
+
+## Класс BitBuilder
+
+Генерирует объект с битовыми значениями для списка имён, автоматически вычисляя смещения.
+
+```typescript
+const builder = new BitBuilder(['READ', 'WRITE', 'EXECUTE']);
+const bits = builder.execute(); 
+// { READ: 1n << 0n, WRITE: 1n << 1n, EXECUTE: 1n << 2n }
+```
+
+### Конструктор
+
+```typescript
+constructor(public readonly bits: T[])
+```
+
+### Методы
+
+| Метод | Описание |
+|-------|----------|
+| `static resolve(bits: BigIntRecord): bigint` | Побитовое ИЛИ значений объекта. |
+| `execute(data?: Partial<BuilderBitData<T>>): Record<T, bigint>` | Генерирует объект. `data.offset` может быть `bigint` или объектом предыдущих битов – тогда смещение будет вычислено автоматически. |
+| `resolve(bits: BigIntRecord): bigint` | Экземплярный вариант статического `resolve`. |
+
+### Пример со смещением
+
+```typescript
+const first = new BitBuilder(['A', 'B']).execute(); // A=1<<0, B=1<<1
+const second = new BitBuilder(['C', 'D']).execute({ offset: first }); 
+// C = 1<<2, D = 1<<3
+```
+
+---
+
+## Компилятор
+
+Модуль `fbit-field/compiler` предоставляет инструменты для автоматической генерации TypeScript-файлов с битовыми константами из описания категорий.
+
+### Compiler<T>
+
+Основной класс.
+
+```typescript
+const compiler = new Compiler(
+  {
+    permissions: ['read', 'write', 'delete'],
+    roles: ['admin', 'user', 'guest']
+  },
+  './src/generated/bit-flags.ts',
+  { /* опциональные переопределения методов */ },
+  { name: 'myFlags', defaultExportOn: true }
+);
+compiler.execute();
+```
+
+#### Параметры конструктора
+
+- `settings` – `Record<T, string[]>` – категории и списки имён.
+- `filePath` – путь к выходному файлу.
+- `methods` – необязательные переопределения:
+  - `settingsFormat` – функция форматирования имён (по умолчанию приводит к camelCase).
+  - `writeFile`, `compile`, `formatFile`, `resolveForCompiled`.
+- `config` – частичная конфигурация:
+  - `name` – имя константы (по умолчанию `"settings"`).
+  - `writeInCompiler` – если `true`, обновляет существующий файл, заменяя маркеры.
+  - `defaultExportOn` – добавлять `export default` (по умолчанию `true`).
+
+#### Методы
+
+- `execute(values?: string): string` – запускает генерацию.
+- `parse(type: T): string[]` – возвращает отформатированные имена для категории.
+- `compile(): Record<string, Record<string, string>>` – возвращает сырую структуру.
+- `resolveForCompiled(): string` – возвращает строку с кодом константы.
+- `writeFile(me, values?: string): string` – записывает файл.
+
+### CodeGenerator
+
+Используется внутри `Compiler`. Может быть применён отдельно.
+
+```typescript
+const generator = new CodeGenerator(settings);
+const structure = generator.generateStructure();
+const code = generator.toCodeString(structure);
+const exportBlock = generator.generateExportBlock('myConst', true);
+```
+
+### FileManager
+
+Утилита для работы с файлами: чтение, запись, замена маркеров.
+
+Маркеры по умолчанию:
+
+```typescript
+// ## { COMPILED__WRITE_COMPILED_HERE } ## \
+// ## { COMPILED__WRITE_VALUES_HERE } ## \
+// ## { COMPILED__WRITE_EXPORT_HERE } ## \
+```
+
+---
+
+## Типы и константы
+
+### Экспортируемые типы
+
+| Тип | Описание |
+|-----|----------|
+| `MustArray<T>` | Кортеж с хотя бы одним элементом `[T, ...T[]]`. |
+| `ArrayOrType<T>` | `T \| MustArray<T>`. |
+| `Bit` | `bigint \| number \| string \| boolean`. |
+| `BigIntRecord` | `Record<string, bigint>`. |
+| `BuilderBitData<T>` | Параметры для `BitBuilder.execute`. |
+| `BitFieldInput` | `Bit \| BitField`. |
+| `ISettings<T>` | `Record<T, string[]>` – для компилятора. |
+| `CompilerConfig` | Конфигурация компилятора. |
+
+### Константы
+
+| Константа | Значение | Описание |
+|-----------|----------|----------|
+| `ZERO_BIT` | `0n` | Ноль. |
+| `ONE_BIT` | `1n` | Единица. |
+| `BINARY_RADIX` | `2` | Основание двоичной системы. |
+| `INDEX_OFFSET` | `1` | Смещение для пересчёта длины. |
+| `BINARY_PREFIX` | `"0b"` | Префикс для `BigInt`. |
+| `HEX_PREFIX` | `"0x"` | Шестнадцатеричный префикс. |
+| `BINARY_REGULAR_EXPRESSION` | `/^[01]+$/` | Проверка двоичной строки. |
+| `HEX_REGULAR_EXPRESSION` | `/^[0-9a-fA-F]+$/` | Проверка hex-строки. |
+
+---
+
+## Примеры
+
+### Права доступа (RBAC)
+
+```typescript
+import BitField from 'fbit-field';
+
+enum Permission {
+  Read   = 1n << 0n,
+  Write  = 1n << 1n,
+  Delete = 1n << 2n,
+  Share  = 1n << 3n,
+}
+
+const userPerms = new BitField(Permission.Read | Permission.Write);
+userPerms.has(Permission.Delete); // false
+
+const adminPerms = userPerms.add(Permission.Delete, Permission.Share);
+adminPerms.has(Permission.Share); // true
+```
+
+### Функции с флагами
+
+```typescript
+function process(mode: BitField) {
+  if (mode.has(Flag.Verbose)) console.log('Подробный вывод');
+  if (mode.has(Flag.DryRun)) console.log('Сухой запуск');
 }
 ```
 
-- Сначала собирается объект `rights`, содержащий для каждой категории массив имён (уже отформатированных, например, в camelCase).
-- Затем создаётся экземпляр `Compiler` с указанием пути к тому же файлу (`rights.types.ts`), откуда он будет читать и куда запишет результат.
-- Опция `writeInCompiler: true` говорит, что нужно найти маркеры и заменить их, а не перезаписывать файл целиком.
-- `name: "raw"` задаёт имя генерируемой константы — в итоге в файле появится `export const raw = { ... }`.
-- Вызов `.execute()` запускает процесс: чтение файла, генерация кода, замена маркеров, запись.
+### Автоматическая генерация конфигурации через Compiler
 
-После выполнения в файле появляется блок между маркерами `WRITE_COMPILED_HERE` с объектом `raw`, содержащим все битовые значения (например, `administrator: 1n << 0n`). Также между маркерами `WRITE_EXPORT_HERE` генерируются вспомогательные типы, такие как `RawKeys`, `Raw<T>` и т.д.
+Создайте файл `scripts/generate-flags.ts`:
 
-### Структура сгенерированного объекта
+```typescript
+import { Compiler } from 'fbit-field/compiler';
 
-В вашем примере сгенерированный объект `raw` имеет вложенность по категориям (`my`, `posts`, `organizations`), а каждое право представлено как `1n << N`. Компилятор также добавляет JSDoc-комментарии `/** @value ... */` для удобства.
-
-После генерации вы можете использовать эти константы в коде:
-
-```ts
-import { raw } from "./rights.types";
-
-const userPermissions = raw.my.user | raw.posts.view; // комбинация прав
+const compiler = new Compiler(
+  {
+    ui: ['showSidebar', 'enableDarkMode', 'compactView'],
+    api: ['canCreate', 'canEdit', 'canDelete'],
+  },
+  './src/flags.ts',
+  {},
+  { name: 'featureFlags', defaultExportOn: true }
+);
+compiler.execute();
 ```
 
-А типы помогут обеспечить типобезопасность:
-
-```ts
-type MyPermission = keyof typeof raw.my; // "administrator" | "moderator" | ...
-```
+Затем запустите `ts-node scripts/generate-flags.ts`. В результате получите готовый TypeScript-файл с константами и типами.
 
 ---
 
-## Заключение
+## Лицензия
 
-Использование `BitBuilder` и `Compiler` из библиотеки **fbit-field** позволяет:
-
-- **Избежать ошибок** при ручном назначении битовых масок.
-- **Автоматически поддерживать непересекающиеся диапазоны** битов между категориями.
-- **Генерировать TypeScript-декларации** на основе единого источника прав, что упрощает рефакторинг и добавление новых прав.
-- **Сохранять ручные правки** в файле благодаря маркерной замене.
-
-Пример из `rights.types.ts` демонстрирует типичный сценарий для системы прав доступа: есть несколько категорий (`My`, `Posts`, `Organizations`), для каждой определён полный набор и набор по умолчанию, а компилятор генерирует плоские константы и типы для удобного использования.
-
-Более подробную информацию и исходный код можно найти в репозитории: [https://github.com/FOCKUSTY/bit-field](https://github.com/FOCKUSTY/bit-field).
+MIT.
