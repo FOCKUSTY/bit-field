@@ -47,7 +47,9 @@ export class FileManager {
    * @param markers - Массив объектов с полями `pattern` и `replacement`.
    * @returns Содержимое файла после всех замен.
    */
-  public replaceMarkers(markers: Array<{ pattern: RegExp; replacement: string }>): string {
+  public replaceMarkers(
+    markers: Array<{ pattern: RegExp; replacement: string }>,
+  ): string {
     let content = this.read();
     for (const { pattern, replacement } of markers) {
       content = content.replace(pattern, replacement);

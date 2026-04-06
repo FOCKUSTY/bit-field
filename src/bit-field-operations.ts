@@ -36,7 +36,10 @@ export class BitFieldOperations {
    * @param second - Второе значение.
    * @returns `true`, если значения не равны.
    */
-  public static notEquals(first: BitFieldInput, second: BitFieldInput): boolean {
+  public static notEquals(
+    first: BitFieldInput,
+    second: BitFieldInput,
+  ): boolean {
     return !this.equals(first, second);
   }
 
@@ -86,7 +89,7 @@ export class BitFieldOperations {
   public static logarithm2(bit: BitFieldInput): bigint {
     const value = this.toBigInt(bit);
     if (value === ZERO_BIT) {
-      throw new Error('logarithm2(0) is undefined');
+      throw new Error("logarithm2(0) is undefined");
     }
     const bitLength = value.toString(BINARY_RADIX).length;
     return BigInt(bitLength - INDEX_OFFSET);

@@ -17,7 +17,9 @@ export class CodeGenerator<const T extends string> {
    */
   public constructor(
     private readonly settings: ISettings<T>,
-    private readonly settingsFormat: (array: string[]) => string[] = defaultSettingsFormat,
+    private readonly settingsFormat: (
+      array: string[],
+    ) => string[] = defaultSettingsFormat,
   ) {}
 
   /**
@@ -32,7 +34,10 @@ export class CodeGenerator<const T extends string> {
     let currentOffset: Record<string, bigint> = {};
 
     for (const category of categories) {
-      const { categories: categoriesMap, offset } = this.processCategory(category, currentOffset);
+      const { categories: categoriesMap, offset } = this.processCategory(
+        category,
+        currentOffset,
+      );
       result[category] = categoriesMap;
       currentOffset = offset;
     }
@@ -45,7 +50,9 @@ export class CodeGenerator<const T extends string> {
    * @param structure - Объект, полученный из `generateStructure`.
    * @returns Строка, представляющая валидный TS-код.
    */
-  public toCodeString(structure: Record<string, Record<string, string>>): string {
+  public toCodeString(
+    structure: Record<string, Record<string, string>>,
+  ): string {
     return JSON.stringify(structure, null, 2)
       .replaceAll('"', "")
       .replaceAll("}", "} as const")
@@ -60,7 +67,10 @@ export class CodeGenerator<const T extends string> {
    * @param defaultExportOn - Следует ли добавить `export default`.
    * @returns Строка с TypeScript-экспортами.
    */
-  public generateExportBlock(constName: string, defaultExportOn: boolean): string {
+  public generateExportBlock(
+    constName: string,
+    defaultExportOn: boolean,
+  ): string {
     const capitalized = format(constName, true);
 
     let exports = `
@@ -119,7 +129,9 @@ export type ${capitalized}Keys<T extends Keys> = keyof ${capitalized}<T>;`;
     const bits = new BitBuilder(formattedNames).execute(offset);
 
     const categories = Object.fromEntries(
-      Object.entries(bits).map(([name, bitValue]) => this.formatBitEntry(name, bitValue)),
+      Object.entries(bits).map(([name, bitValue]) =>
+        this.formatBitEntry(name, bitValue),
+      ),
     );
 
     return { categories, offset: bits };

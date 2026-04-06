@@ -29,7 +29,9 @@ export const format = (str: string, capitalize: boolean): string =>
  * defaultSettingsFormat(["READ__WRITE", "CONTROL_FLAG"]) // ["readWrite", "controlFlag"]
  * ```
  */
-export const defaultSettingsFormat = <const T extends string>(settings: T[]): string[] =>
+export const defaultSettingsFormat = <const T extends string>(
+  settings: T[],
+): string[] =>
   settings.map((s: T) =>
     format(
       s

@@ -134,13 +134,18 @@ export class Compiler<T extends string> {
 
   /** Создаёт блок скомпилированной константы (с предупреждением). */
   private createCompiledBlock(constName: string): string {
-    const warningComment = CodeGenerator.generateWarningComment(parse(__filename).name);
+    const warningComment = CodeGenerator.generateWarningComment(
+      parse(__filename).name,
+    );
     return `${warningComment}\nexport const ${constName} = ${this.resolveForCompiled()};`;
   }
 
   /** Создаёт блок экспорта. */
   private createExportBlock(constName: string): string {
-    return this.codeGenerator.generateExportBlock(constName, this.config.defaultExportOn);
+    return this.codeGenerator.generateExportBlock(
+      constName,
+      this.config.defaultExportOn,
+    );
   }
 
   /** Создаёт блок пользовательских значений. */
@@ -170,15 +175,24 @@ export class Compiler<T extends string> {
     const markers = [
       {
         pattern: MARKERS.compiled.pattern,
-        replacement: FileManager.wrapWithMarker(MARKERS.compiled.line, compiledBlock),
+        replacement: FileManager.wrapWithMarker(
+          MARKERS.compiled.line,
+          compiledBlock,
+        ),
       },
       {
         pattern: MARKERS.export.pattern,
-        replacement: FileManager.wrapWithMarker(MARKERS.export.line, exportBlock),
+        replacement: FileManager.wrapWithMarker(
+          MARKERS.export.line,
+          exportBlock,
+        ),
       },
       {
         pattern: MARKERS.values.pattern,
-        replacement: FileManager.wrapWithMarker(MARKERS.values.line, valuesBlock),
+        replacement: FileManager.wrapWithMarker(
+          MARKERS.values.line,
+          valuesBlock,
+        ),
       },
     ];
     return this.fileManager.replaceMarkers(markers);

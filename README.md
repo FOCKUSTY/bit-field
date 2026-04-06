@@ -31,7 +31,7 @@ pnpm add fbit-field
 ### Базовое использование
 
 ```typescript
-import BitField from 'fbit-field';
+import BitField from "fbit-field";
 
 // Создание битового поля из числа, строки, bigint или другого BitField
 const flags = new BitField(0b1010); // 10
@@ -54,10 +54,10 @@ const combined = flags.add(0b0100).remove(0b1000); // 0b0110
 ### Работа с именованными флагами через `BitBuilder`
 
 ```typescript
-import { BitBuilder } from 'fbit-field';
+import { BitBuilder } from "fbit-field";
 
-const builder = new BitBuilder(['READ', 'WRITE', 'EXECUTE']);
-const permissions = builder.execute(); 
+const builder = new BitBuilder(["READ", "WRITE", "EXECUTE"]);
+const permissions = builder.execute();
 // { READ: 1n << 0n, WRITE: 1n << 1n, EXECUTE: 1n << 2n }
 
 // Объединение флагов в число
@@ -67,14 +67,14 @@ const mask = builder.resolve(permissions); // 0b111
 ### Генерация TypeScript-конфигурации (компилятор)
 
 ```typescript
-import { Compiler } from 'fbit-field/compiler';
+import { Compiler } from "fbit-field/compiler";
 
 const settings = {
-  file: ['read', 'write', 'delete'],
-  user: ['view', 'edit', 'share'],
+  file: ["read", "write", "delete"],
+  user: ["view", "edit", "share"],
 };
 
-const compiler = new Compiler(settings, './src/generated/flags.ts');
+const compiler = new Compiler(settings, "./src/generated/flags.ts");
 compiler.execute(); // создаст файл с константой settings и вспомогательными типами
 ```
 
@@ -100,7 +100,7 @@ export const settings = {
 Библиотека написана на TypeScript и полностью типизирована. Вы получаете автодополнение и проверку типов для всех методов.
 
 ```typescript
-import BitField from 'fbit-field';
+import BitField from "fbit-field";
 
 const bf = new BitField(0b1100);
 bf.has(0b1000); // true
