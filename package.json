@@ -1,6 +1,6 @@
 {
   "name": "fbit-field",
-  "version": "3.0.0-alpha",
+  "version": "3.0.0",
   "description": "Мощная TypeScript-библиотека для работы с битовыми полями на BigInt. Идеально подходит для прав доступа, флагов функций, переключателей и компактного хранения множества состояний.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -28,10 +28,6 @@
     "build": "tsc",
     "test": "ts-mocha ./src/test/**/*.test.ts"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/FOCKUSTY/bit-field.git"
-  },
   "keywords": [
     "bitfield",
     "bit-field",
@@ -53,6 +49,10 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/FOCKUSTY/bit-field/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FOCKUSTY/bit-field.git"
   },
   "homepage": "https://github.com/FOCKUSTY/bit-field#readme",
   "engines": {
