@@ -1,3 +1,16 @@
+import { BitBuilder } from "../../src";
+
+export const bitConfig = BitBuilder.fromConfig({
+  user: {
+    include: ["USER_VIEW", "USER_CREATE"],
+    exclude: ["USER_EDIT", "USER_DELETE"],
+  },
+  content: {
+    include: ["CONTENT_VIEW", "CONTENT_PUBLISH"],
+    exclude: ["CONTENT_DELETE", "CONTENT_ARCHIVE"],
+  },
+});
+
 // ## { COMPILED__WRITE_COMPILED_HERE } ## \\
 
 /**
@@ -15,14 +28,8 @@ export const permissions = {
   content: {
     /** @value 16 */ contentView: 1n << 4n,
     /** @value 32 */ contentPublish: 1n << 5n,
-    /** @value 64 */ contentArchive: 1n << 6n,
-    /** @value 128 */ contentDelete: 1n << 7n,
-  } as const,
-
-  admin: {
-    /** @value 256 */ adminViewLogs: 1n << 8n,
-    /** @value 512 */ adminManageRoles: 1n << 9n,
-    /** @value 1024 */ adminSystemSettings: 1n << 10n,
+    /** @value 64 */ contentDelete: 1n << 6n,
+    /** @value 128 */ contentArchive: 1n << 7n,
   } as const,
 } as const;
 // ## { COMPILED__WRITE_COMPILED_HERE } ## \\

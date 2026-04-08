@@ -1,4 +1,11 @@
-import type { BigIntRecord, BuilderBitData, MaybeReadonly } from "./types";
+import type {
+  BigIntRecord,
+  BitConfig,
+  BuilderBitData,
+  DefaultConfig,
+  MaybeReadonly,
+  StaticBuilderBitData,
+} from "./types";
 
 import { ONE_BIT, ZERO_BIT } from "./constants";
 import { BitFieldOperations } from "./bit-field-operations";
@@ -15,6 +22,62 @@ import { BitFieldOperations } from "./bit-field-operations";
  * ```
  */
 export class BitBuilder<const T extends string> {
+  public static fromConfig<const Config extends DefaultConfig>(
+    config: Config,
+  ): BitConfig<Config> {
+    let offset: bigint = ZERO_BIT;
+
+    const keys = Object.keys(config) as (keyof Config)[];
+    const bitConfig = {
+      available: {},
+      default: {},
+      raw: {},
+    } as BitConfig<Config>;
+
+    for (const key of keys) {
+      const { include, exclude } = config[key];
+
+      const all = [...include, ...exclude];
+      const builder = new BitBuilder(all);
+
+      const availableBits = builder.execute({ offset });
+      const defaultBits = builder.execute({ offset, exclude });
+
+      bitConfig.available[key] = availableBits;
+      bitConfig.default[key] = defaultBits;
+      bitConfig.raw[key] = all;
+
+      const maxBit = BitFieldOperations.max(...Object.values(availableBits));
+      offset = BitFieldOperations.logarithm2(maxBit) + ONE_BIT;
+    }
+
+    return bitConfig;
+  }
+
+  public static fromData<const I extends string[], const E extends string[]>(
+    data: StaticBuilderBitData<I, E>,
+  ) {
+    const all = [...data.include, ...data.exclude];
+    const exclude = data.exclude;
+    const include = data.include;
+
+    const bitBuilder = new BitBuilder(all);
+    const availableBits = bitBuilder.execute({ offset: data.offset });
+    const defaultBits = bitBuilder.execute({
+      offset: data.offset,
+      exclude: exclude,
+    });
+
+    return {
+      all,
+      include,
+      exclude,
+      bitBuilder,
+      availableBits,
+      defaultBits,
+    } as const;
+  }
+
   /**
    * @param bits - Массив имён битов в порядке их следования.
    */
