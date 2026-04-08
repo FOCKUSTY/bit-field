@@ -13,9 +13,7 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "references": [
-    { "path": "./tsconfig.test.json" }
-  ],
+  "references": [{ "path": "./tsconfig.test.json" }],
   "include": ["./**/*.ts"],
   "exclude": ["node_modules", "dist", "test"]
 }

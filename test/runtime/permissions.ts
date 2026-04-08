@@ -9,21 +9,21 @@ export const permissions = {
     /** @value 1 */ userView: 1n << 0n,
     /** @value 2 */ userCreate: 1n << 1n,
     /** @value 4 */ userEdit: 1n << 2n,
-    /** @value 8 */ userDelete: 1n << 3n
+    /** @value 8 */ userDelete: 1n << 3n,
   } as const,
 
   content: {
     /** @value 16 */ contentView: 1n << 4n,
     /** @value 32 */ contentPublish: 1n << 5n,
     /** @value 64 */ contentArchive: 1n << 6n,
-    /** @value 128 */ contentDelete: 1n << 7n
+    /** @value 128 */ contentDelete: 1n << 7n,
   } as const,
 
   admin: {
     /** @value 256 */ adminViewLogs: 1n << 8n,
     /** @value 512 */ adminManageRoles: 1n << 9n,
-    /** @value 1024 */ adminSystemSettings: 1n << 10n
-  } as const
+    /** @value 1024 */ adminSystemSettings: 1n << 10n,
+  } as const,
 } as const;
 // ## { COMPILED__WRITE_COMPILED_HERE } ## \\
 // ## { COMPILED__WRITE_VALUES_HERE } ## \\

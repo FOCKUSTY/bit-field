@@ -28,7 +28,9 @@ export class CodeGenerator<const T extends string> {
    *
    * @returns Объект вида `{ категория: { имяБита: "1n << N" } }`.
    */
-  public generateStructure(jsdocs?: boolean): Record<string, Record<string, string>> {
+  public generateStructure(
+    jsdocs?: boolean,
+  ): Record<string, Record<string, string>> {
     const categories = Object.keys(this.settings) as T[];
     const result: Record<string, Record<string, string>> = {};
 
@@ -38,7 +40,7 @@ export class CodeGenerator<const T extends string> {
       const { categories: categoriesMap, offset } = this.processCategory(
         category,
         currentOffset,
-        jsdocs
+        jsdocs,
       );
       result[category] = categoriesMap;
       currentOffset = offset;
@@ -107,7 +109,11 @@ export type ${capitalized}Keys<T extends Keys> = keyof ${capitalized}<T>;`;
    * @param bitValue - Числовое значение бита (степень двойки).
    * @returns Кортеж `[ ключ, значение ]`, где значение — строка `"1n << N"`.
    */
-  private formatBitEntry(name: string, bitValue: bigint, jsdocs?: boolean): [string, string] {
+  private formatBitEntry(
+    name: string,
+    bitValue: bigint,
+    jsdocs?: boolean,
+  ): [string, string] {
     return [
       jsdocs ? `/** @value ${bitValue} */${SPACE}${name}` : name,
       `1n << ${BitFieldOperations.logarithm2(bitValue)}n`,
@@ -124,7 +130,7 @@ export type ${capitalized}Keys<T extends Keys> = keyof ${capitalized}<T>;`;
   private processCategory(
     category: T,
     offset: Record<string, bigint>,
-    jsdocs?: boolean
+    jsdocs?: boolean,
   ): {
     categories: Record<string, string>;
     offset: Record<string, bigint>;
@@ -134,7 +140,7 @@ export type ${capitalized}Keys<T extends Keys> = keyof ${capitalized}<T>;`;
 
     const categories = Object.fromEntries(
       Object.entries(bits).map(([name, bitValue]) => {
-        return this.formatBitEntry(name, bitValue, jsdocs)
+        return this.formatBitEntry(name, bitValue, jsdocs);
       }),
     );
 

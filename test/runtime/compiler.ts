@@ -5,12 +5,7 @@ import { resolve } from "path";
 // permissions.config.ts
 export const permissionsConfig = {
   // Права на управление пользователями
-  user: [
-    "USER_VIEW",
-    "USER_CREATE",
-    "USER_EDIT",
-    "USER_DELETE",
-  ],
+  user: ["USER_VIEW", "USER_CREATE", "USER_EDIT", "USER_DELETE"],
   // Права на управление контентом
   content: [
     "CONTENT_VIEW",
@@ -19,13 +14,8 @@ export const permissionsConfig = {
     "CONTENT_DELETE",
   ],
   // Административные права
-  admin: [
-    "ADMIN_VIEW_LOGS",
-    "ADMIN_MANAGE_ROLES",
-    "ADMIN_SYSTEM_SETTINGS",
-  ],
+  admin: ["ADMIN_VIEW_LOGS", "ADMIN_MANAGE_ROLES", "ADMIN_SYSTEM_SETTINGS"],
 };
-
 
 const compiler = new Compiler(
   permissionsConfig,
@@ -35,7 +25,7 @@ const compiler = new Compiler(
     name: "permissions",
     writeInCompiler: true,
     defaultExportOn: true,
-    jsdocs: true
+    jsdocs: true,
   },
 );
 compiler.execute();
