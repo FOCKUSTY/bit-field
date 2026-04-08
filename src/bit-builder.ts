@@ -56,7 +56,7 @@ export class BitBuilder<const T extends string> {
    * ```
    */
   public static fromConfig<const Config extends DefaultConfig>(
-    config: Config
+    config: Config,
   ): BitConfig<Config> {
     let offset: bigint = ZERO_BIT;
 
@@ -70,7 +70,7 @@ export class BitBuilder<const T extends string> {
     for (const key of keys) {
       const { include, exclude } = config[key];
 
-      if (include.some(permission => exclude.includes(permission))) {
+      if (include.some((permission) => exclude.includes(permission))) {
         throw new Error("Intersection was found.");
       }
 
@@ -84,7 +84,9 @@ export class BitBuilder<const T extends string> {
       bitConfig.default[key] = defaultBits;
       bitConfig.raw[key] = all;
 
-      const maxBit = BitFieldOperations.max(...Object.values(availableBits) as bigint[]);
+      const maxBit = BitFieldOperations.max(
+        ...(Object.values(availableBits) as bigint[]),
+      );
       if (maxBit !== ZERO_BIT) {
         offset = BitFieldOperations.logarithm2(maxBit) + ONE_BIT;
       }
@@ -124,9 +126,10 @@ export class BitBuilder<const T extends string> {
    * // data.default:   { READ: 1n<<5n, WRITE: 1n<<6n, DELETE: 0n }
    * ```
    */
-  public static fromData<const Include extends string[], const Exclude extends string[]>(
-    data: StaticBuilderBitData<Include, Exclude>,
-  ) {
+  public static fromData<
+    const Include extends string[],
+    const Exclude extends string[],
+  >(data: StaticBuilderBitData<Include, Exclude>) {
     const all = [...data.include, ...data.exclude];
     const exclude = data.exclude;
     const include = data.include;
@@ -237,14 +240,14 @@ export class BitBuilder<const T extends string> {
       if (include) {
         return include.includes(bit);
       }
-      
+
       return true;
     })();
 
     if (excluded || !included) {
       return ZERO_BIT;
     }
-    
+
     return ONE_BIT << modifier;
   }
 
@@ -276,8 +279,8 @@ export class BitBuilder<const T extends string> {
 BitBuilder.fromConfig({
   user: {
     exclude: ["ABC"],
-    include: ["A"]
-  }
-})
+    include: ["A"],
+  },
+});
 
 export default BitBuilder;

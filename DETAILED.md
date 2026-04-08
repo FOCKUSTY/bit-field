@@ -43,7 +43,7 @@
 static fromConfig<Config extends DefaultConfig>(config: Config): BitConfig<Config>
 ```
 
-**Параметры:**  
+**Параметры:**
 
 - `config` – объект, где каждый ключ – имя категории, значение – объект с полями:
 - `include: string[]` – имена, которые должны получить ненулевые значения.
@@ -140,8 +140,8 @@ type ConfigKeys<Config extends DefaultConfig, K extends keyof Config> =
 
 type BitConfig<Config extends DefaultConfig> = {
   available: { [Key in keyof Config]: Record<ConfigKeys<Config, Key>, bigint> };
-  default:   { [Key in keyof Config]: Record<ConfigKeys<Config, Key>, bigint> };
-  raw:       { [Key in keyof Config]: ConfigKeys<Config, Key>[] };
+  default: { [Key in keyof Config]: Record<ConfigKeys<Config, Key>, bigint> };
+  raw: { [Key in keyof Config]: ConfigKeys<Config, Key>[] };
 };
 ```
 
@@ -166,13 +166,13 @@ const rights = {
 const perms = BitBuilder.fromConfig(rights);
 
 // 3. Создаём роли
-const guest = new BitField(perms.default.comments);          // только view, create
-const editor = new BitField(perms.available.posts);          // все права на посты
+const guest = new BitField(perms.default.comments); // только view, create
+const editor = new BitField(perms.available.posts); // все права на посты
 const moderator = guest.add(perms.available.comments.moderate); // добавили moderate
 
 // 4. Проверяем
-editor.has(perms.available.posts.delete);      // true
-moderator.has(perms.available.comments.delete) // false (был исключён)
+editor.has(perms.available.posts.delete); // true
+moderator.has(perms.available.comments.delete); // false (был исключён)
 ```
 
 ### Динамическое добавление прав

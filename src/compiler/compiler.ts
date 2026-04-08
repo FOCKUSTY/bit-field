@@ -13,7 +13,7 @@ import { parse } from "path";
  * Умеет как создавать новый файл, так и обновлять существующий (используя маркеры).
  *
  * @template T - Строковые литералы категорий.
- * 
+ *
  * @deprecated use a `BitBuilder.fromConfig` method
  */
 export class Compiler<const T extends string> {

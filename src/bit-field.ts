@@ -273,7 +273,7 @@ export class BitField extends BitFieldView {
     if (BitFieldOperations.equals(this._bit, ZERO_BIT)) {
       return null;
     }
-    
+
     return this._bit & -this._bit;
   }
 
