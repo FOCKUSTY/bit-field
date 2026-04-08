@@ -22,6 +22,39 @@ import { BitFieldOperations } from "./bit-field-operations";
  * ```
  */
 export class BitBuilder<const T extends string> {
+  /**
+   * Создаёт конфигурацию битов для нескольких категорий на основе декларативного описания.
+   * Для каждой категории генерирует:
+   * - `available` – все возможные биты (из `include` и `exclude`),
+   * - `default` – биты, исключая указанные в `exclude`,
+   * - `raw` – массив всех имён.
+   *
+   * Категории обрабатываются последовательно, причём следующая категория автоматически
+   * получает смещение, следующее за максимальным битом предыдущей категории.
+   *
+   * @template Config - Тип конфигурации, должен соответствовать `DefaultConfig`.
+   *                    Ожидается объект, где ключи – названия категорий,
+   *                    а значения – объекты с полями `include` и `exclude` (массивы строк).
+   *
+   * @param config - Объект конфигурации вида:
+   *                 `{ категория: { include: string[], exclude: string[] } }`.
+   *
+   * @returns Объект с тремя полями (`available`, `default`, `raw`),
+   *          каждое из которых содержит записи для каждой категории.
+   *
+   * @example
+   * ```ts
+   * const rights = {
+   *   user: { include: ["VIEW", "EDIT"], exclude: ["DELETE"] },
+   *   admin: { include: ["VIEW", "EDIT", "DELETE"], exclude: [] }
+   * };
+   *
+   * const bits = BitBuilder.fromConfig(rights);
+   * // bits.available.user: { VIEW: 1n<<0n, EDIT: 1n<<1n, DELETE: 1n<<2n }
+   * // bits.default.user:   { VIEW: 1n<<0n, EDIT: 1n<<1n, DELETE: 0n }
+   * // bits.raw.user:       ["VIEW", "EDIT", "DELETE"]
+   * ```
+   */
   public static fromConfig<const Config extends DefaultConfig>(
     config: Config,
   ): BitConfig<Config> {
@@ -54,8 +87,39 @@ export class BitBuilder<const T extends string> {
     return bitConfig;
   }
 
-  public static fromData<const I extends string[], const E extends string[]>(
-    data: StaticBuilderBitData<I, E>,
+  /**
+   * Создаёт битовые значения для одного набора данных (категории).
+   * Позволяет гибко задать включаемые и исключаемые имена, а также начальное смещение.
+   *
+   * @template Include - Тип массива строк для включения (например, `['READ', 'WRITE']`).
+   * @template Exclude - Тип массива строк для исключения.
+   *
+   * @param data - Параметры генерации:
+   *   - `include` – массив имён, которые должны получить ненулевые значения.
+   *   - `exclude` – массив имён, которые получат нулевые значения.
+   *   - `offset` – начальное смещение (число `bigint` или объект с предыдущими битами).
+   *
+   * @returns Объект, содержащий:
+   *   - `all` – объединённый массив всех имён (сначала `include`, затем `exclude`).
+   *   - `include` – исходный массив включаемых имён.
+   *   - `exclude` – исходный массив исключаемых имён.
+   *   - `bitBuilder` – экземпляр `BitBuilder`, использованный для генерации.
+   *   - `available` – объект со всеми битами (все имена из `all` с их значениями).
+   *   - `default` – объект, где имена из `exclude` имеют значение `0n`.
+   *
+   * @example
+   * ```ts
+   * const data = BitBuilder.fromData({
+   *   include: ['READ', 'WRITE'],
+   *   exclude: ['DELETE'],
+   *   offset: 5n
+   * });
+   * // data.available: { READ: 1n<<5n, WRITE: 1n<<6n, DELETE: 1n<<7n }
+   * // data.default:   { READ: 1n<<5n, WRITE: 1n<<6n, DELETE: 0n }
+   * ```
+   */
+  public static fromData<const Include extends string[], const Exclude extends string[]>(
+    data: StaticBuilderBitData<Include, Exclude>,
   ) {
     const all = [...data.include, ...data.exclude];
     const exclude = data.exclude;
@@ -73,8 +137,8 @@ export class BitBuilder<const T extends string> {
       include,
       exclude,
       bitBuilder,
-      availableBits,
-      defaultBits,
+      available: availableBits,
+      default: defaultBits,
     } as const;
   }
 

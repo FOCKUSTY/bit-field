@@ -1,3 +1,5 @@
+import type { MaybeReadonly } from "../types";
+
 import type { ISettings, CompilerConfig } from "./compiler.types";
 import { MARKERS, defaultSettingsFormat } from "./compiler.utils";
 
@@ -5,13 +7,14 @@ import { CodeGenerator } from "./code-generator";
 import { FileManager } from "./file-manager";
 
 import { parse } from "path";
-import { MaybeReadonly } from "../types";
 
 /**
  * Компилятор для преобразования описания битовых категорий в TypeScript-файл с константой и типами.
  * Умеет как создавать новый файл, так и обновлять существующий (используя маркеры).
  *
  * @template T - Строковые литералы категорий.
+ * 
+ * @deprecated use a `BitBuilder.fromConfig` method
  */
 export class Compiler<const T extends string> {
   /** Список ключей категорий. */
