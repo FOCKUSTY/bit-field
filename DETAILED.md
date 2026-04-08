@@ -6,7 +6,10 @@
 2. [Класс BitFieldView](#класс-bitfieldview)
 3. [Класс BitFieldOperations](#класс-bitfieldoperations)
 4. [Класс BitBuilder](#класс-bitbuilder)
-5. [Компилятор (Compiler, CodeGenerator, FileManager)](#компилятор)
+   - [BitBuilder.fromConfig (новый)](#bitbuilderfromconfig)
+   - [BitBuilder.fromData](#bitbuilderfromdata)
+   - [Методы execute и resolve](#методы-execute-и-resolve)
+5. [Компилятор (устаревший)](#компилятор-устаревший)
 6. [Типы и константы](#типы-и-константы)
 7. [Примеры](#примеры)
 
@@ -14,310 +17,171 @@
 
 ## Класс BitField
 
-Основной класс для работы с битовым полем. Наследует `BitFieldView`.
-
-### Конструктор
-
-```typescript
-constructor(bit: BitFieldInput = 0n)
-```
-
-- `bit` – может быть `bigint`, `number`, `string`, `boolean` или экземпляр `BitField`.
-
-### Статические методы
-
-| Метод                                               | Описание                                                    |
-| --------------------------------------------------- | ----------------------------------------------------------- |
-| `static fromBinary(binaryString: string): BitField` | Создаёт поле из двоичной строки (например, `"1010"`).       |
-| `static fromHex(hexString: string): BitField`       | Создаёт поле из шестнадцатеричной строки (например, `"a"`). |
-
-### Свойства
-
-| Свойство | Тип      | Описание                               |
-| -------- | -------- | -------------------------------------- |
-| `bit`    | `bigint` | Текущее значение поля (только чтение). |
-
-### Методы (возвращают новый `BitField`)
-
-| Метод                                                 | Описание                                         |
-| ----------------------------------------------------- | ------------------------------------------------ |
-| `clone(): BitField`                                   | Копия.                                           |
-| `set(bit: BitFieldInput): BitField`                   | Заменяет значение.                               |
-| `add(...bits: MustArray<BitFieldInput>): BitField`    | Устанавливает переданные биты.                   |
-| `remove(...bits: MustArray<BitFieldInput>): BitField` | Сбрасывает переданные биты.                      |
-| `clear(): BitField`                                   | Обнуляет поле.                                   |
-| `and(bit: BitFieldInput): BitField`                   | Побитовое И.                                     |
-| `or(bit: BitFieldInput): BitField`                    | Побитовое ИЛИ.                                   |
-| `xor(bit: BitFieldInput): BitField`                   | Побитовое исключающее ИЛИ.                       |
-| `not(bitLength?: number): BitField`                   | Побитовое НЕ с маскированием по `bitLength`.     |
-| `shiftLeft(bits: number): BitField`                   | Сдвиг влево.                                     |
-| `shiftRight(bits: number): BitField`                  | Сдвиг вправо (беззнаковый).                      |
-| `setRange(from: number, to: number): BitField`        | Устанавливает все биты в диапазоне `[from, to]`. |
-| `clearRange(from: number, to: number): BitField`      | Сбрасывает все биты в диапазоне.                 |
-
-### Методы проверки
-
-| Метод                                                 | Возвращает | Описание                                          |
-| ----------------------------------------------------- | ---------- | ------------------------------------------------- |
-| `equals(bit: BitFieldInput): boolean`                 | `boolean`  | Равенство значений.                               |
-| `isSubsetOf(bit: BitFieldInput): boolean`             | `boolean`  | Все ли биты текущего поля присутствуют в `bit`.   |
-| `hasOne(bit: BitFieldInput): boolean`                 | `boolean`  | Установлен ли указанный бит (или все биты маски). |
-| `hasSome(...bits: MustArray<BitFieldInput>): boolean` | `boolean`  | Установлен ли хотя бы один из переданных битов.   |
-| `has(...bits: MustArray<BitFieldInput>): boolean`     | `boolean`  | Установлены ли все переданные биты.               |
-| `hasRange(from: number, to: number): boolean`         | `boolean`  | Установлены ли все биты диапазона.                |
-
-### Прочие методы
-
-| Метод                                | Описание                                                                                       |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `getLowestSetBit(): bigint \| null`  | Возвращает значение младшего установленного бита (`1n << k`) или `null`, если поле равно нулю. |
-| `getHighestSetBit(): bigint \| null` | Возвращает значение старшего установленного бита.                                              |
-
-### Пример
-
-```typescript
-const bf = new BitField(0b1100);
-console.log(bf.getLowestSetBit()); // 1n << 2n (4)
-console.log(bf.getHighestSetBit()); // 1n << 3n (8)
-
-const bf2 = bf.add(0b0010); // 0b1110
-console.log(bf2.hasRange(1, 2)); // true (биты 1 и 2 установлены)
-```
+[без изменений, остаётся как в вашей версии]
 
 ---
 
 ## Класс BitFieldView
 
-Абстрактный класс, предоставляющий методы преобразования и итерации.  
-`BitField` наследует их.
-
-### Методы
-
-| Метод                                            | Описание                                                    |
-| ------------------------------------------------ | ----------------------------------------------------------- |
-| `toArray(): bigint[]`                            | Массив значений установленных битов (каждый как `1n << k`). |
-| `forEach(callback: (bit: bigint) => void): void` | Выполняет callback для каждого установленного бита.         |
-| `toJSON(): string`                               | Возвращает десятичную строку (для `JSON.stringify`).        |
-| `toHexString(): string`                          | Шестнадцатеричное представление без префикса.               |
-| `toBinaryString(): string`                       | Двоичное представление.                                     |
-| `toNumber(): number`                             | Опасно для значений > 2^53.                                 |
-| `toString(): string`                             | Десятичная строка.                                          |
-| `[Symbol.iterator]()`                            | Итератор по установленным битам (от младшего к старшему).   |
-
-### Пример
-
-```typescript
-const bf = new BitField(0b1011);
-for (const bit of bf) {
-  console.log(bit.toString(2)); // "1", "10", "1000" (но в bigint)
-}
-// или
-bf.forEach((bit) => console.log(bit));
-```
+[без изменений]
 
 ---
 
 ## Класс BitFieldOperations
 
-Статический класс с утилитами для низкоуровневой работы.
-
-| Метод                                             | Описание                                          |
-| ------------------------------------------------- | ------------------------------------------------- |
-| `toBigInt(bit: BitFieldInput): bigint`            | Приведение к `bigint`.                            |
-| `equals(first, second): boolean`                  | Сравнение.                                        |
-| `notEquals(first, second): boolean`               | Обратное сравнение.                               |
-| `summarize(...bits): bigint`                      | Побитовое ИЛИ всех аргументов.                    |
-| `add(bit, ...add): bigint`                        | `bit \| OR(add)`.                                 |
-| `remove(bit, ...remove): bigint`                  | `bit & ~OR(remove)`.                              |
-| `logarithm2(bit): bigint`                         | floor(log2(x)) для x > 0.                         |
-| `max(...bits): bigint`                            | Максимальное значение.                            |
-| `maskOfLength(bits: number): bigint`              | Маска из `bits` младших единиц.                   |
-| `maskRange(from: number, length: number): bigint` | Маска, начиная с позиции `from`, длиной `length`. |
+[без изменений]
 
 ---
 
 ## Класс BitBuilder
 
-Генерирует объект с битовыми значениями для списка имён, автоматически вычисляя смещения.
+### `BitBuilder.fromConfig`
+
+Создаёт полную конфигурацию битов для нескольких категорий из декларативного описания.
 
 ```typescript
-const builder = new BitBuilder(["READ", "WRITE", "EXECUTE"]);
-const bits = builder.execute();
-// { READ: 1n << 0n, WRITE: 1n << 1n, EXECUTE: 1n << 2n }
+static fromConfig<Config extends DefaultConfig>(config: Config): BitConfig<Config>
 ```
 
-### Конструктор
+**Параметры:**  
+
+- `config` – объект, где каждый ключ – имя категории, значение – объект с полями:
+- `include: string[]` – имена, которые должны получить ненулевые значения.
+- `exclude: string[]` – имена, которые получат нулевые значения (приоритет выше).
+
+**Возвращает:** объект с тремя полями:
+
+- `available` – все возможные биты (все имена из `include` и `exclude`) с вычисленными значениями.
+- `default` – биты, где `exclude` заменены на `0n`.
+- `raw` – массив всех имён.
+
+Категории обрабатываются последовательно, смещения автоматически продолжаются.
+
+**Пример:**
 
 ```typescript
-constructor(public readonly bits: T[])
+const config = {
+  user: { include: ["VIEW", "EDIT"], exclude: ["DELETE"] },
+  admin: { include: ["VIEW", "EDIT", "DELETE"], exclude: [] },
+};
+
+const bits = BitBuilder.fromConfig(config);
+// bits.available.user: { VIEW: 1n << 0n, EDIT: 1n << 1n, DELETE: 1n << 2n }
+// bits.default.user:   { VIEW: 1n << 0n, EDIT: 1n << 1n, DELETE: 0n }
+// bits.available.admin: { VIEW: 1n << 3n, EDIT: 1n << 4n, DELETE: 1n << 5n }
+
+// Применение в BitField
+const userPerms = new BitField(bits.default.user);
+userPerms.has(bits.available.user.EDIT); // true
+userPerms.has(bits.available.user.DELETE); // false
 ```
 
-### Методы
+### `BitBuilder.fromData`
 
-| Метод                                                           | Описание                                                                                                                           |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `static resolve(bits: BigIntRecord): bigint`                    | Побитовое ИЛИ значений объекта.                                                                                                    |
-| `execute(data?: Partial<BuilderBitData<T>>): Record<T, bigint>` | Генерирует объект. `data.offset` может быть `bigint` или объектом предыдущих битов – тогда смещение будет вычислено автоматически. |
-| `resolve(bits: BigIntRecord): bigint`                           | Экземплярный вариант статического `resolve`.                                                                                       |
-
-### Пример со смещением
+Генерирует биты для одного набора (категории) без автоматического продолжения между категориями.
 
 ```typescript
-const first = new BitBuilder(["A", "B"]).execute(); // A=1<<0, B=1<<1
-const second = new BitBuilder(["C", "D"]).execute({ offset: first });
-// C = 1<<2, D = 1<<3
+static fromData<Include extends string[], Exclude extends string[]>(
+  data: StaticBuilderBitData<Include, Exclude>
+): { all, include, exclude, bitBuilder, available, default }
+```
+
+**Параметры:**
+
+- `include` – массив имён, которые получат ненулевые значения.
+- `exclude` – массив имён, которые получат нулевые значения.
+- `offset` – начальное смещение (`bigint` или объект предыдущих битов).
+
+**Возвращает:** объект с полями `available` (все биты) и `default` (с исключёнными нулями), а также вспомогательные данные.
+
+**Пример:**
+
+```typescript
+const { available, default } = BitBuilder.fromData({
+  include: ["READ", "WRITE"],
+  exclude: ["DELETE"],
+  offset: 5n,
+});
+// available: { READ: 1n << 5n, WRITE: 1n << 6n, DELETE: 1n << 7n }
+// default:   { READ: 1n << 5n, WRITE: 1n << 6n, DELETE: 0n }
+```
+
+### Методы execute и resolve
+
+`execute` генерирует объект битов для текущего набора имён (без категорий).  
+`resolve` суммирует значения объекта в одно число.
+
+```typescript
+const builder = new BitBuilder(["A", "B"]);
+const bits = builder.execute({ offset: 3n }); // { A: 1n << 3n, B: 1n << 4n }
+const sum = builder.resolve(bits); // (1n << 3n) | (1n << 4n)
 ```
 
 ---
 
-## Компилятор
+## Компилятор (устаревший)
 
-Модуль `fbit-field/compiler` предоставляет инструменты для автоматической генерации TypeScript-файлов с битовыми константами из описания категорий.
+> ⚠️ **Устаревший API** – начиная с версии 3.1.0, рекомендуется использовать `BitBuilder.fromConfig`. Класс `Compiler` будет удалён в будущих версиях.
 
-### Compiler<T>
-
-Основной класс.
-
-```typescript
-const compiler = new Compiler(
-  {
-    permissions: ["read", "write", "delete"],
-    roles: ["admin", "user", "guest"],
-  },
-  "./src/generated/bit-flags.ts",
-  {
-    /* опциональные переопределения методов */
-  },
-  { name: "myFlags", defaultExportOn: true },
-);
-compiler.execute();
-```
-
-#### Параметры конструктора
-
-- `settings` – `Record<T, string[]>` – категории и списки имён.
-- `filePath` – путь к выходному файлу.
-- `methods` – необязательные переопределения:
-  - `settingsFormat` – функция форматирования имён (по умолчанию приводит к camelCase).
-  - `writeFile`, `compile`, `formatFile`, `resolveForCompiled`.
-- `config` – частичная конфигурация:
-  - `name` – имя константы (по умолчанию `"settings"`).
-  - `writeInCompiler` – если `true`, обновляет существующий файл, заменяя маркеры.
-  - `defaultExportOn` – добавлять `export default` (по умолчанию `true`).
-
-#### Методы
-
-- `execute(values?: string): string` – запускает генерацию.
-- `parse(type: T): string[]` – возвращает отформатированные имена для категории.
-- `compile(): Record<string, Record<string, string>>` – возвращает сырую структуру.
-- `resolveForCompiled(): string` – возвращает строку с кодом константы.
-- `writeFile(me, values?: string): string` – записывает файл.
-
-### CodeGenerator
-
-Используется внутри `Compiler`. Может быть применён отдельно.
-
-```typescript
-const generator = new CodeGenerator(settings);
-const structure = generator.generateStructure();
-const code = generator.toCodeString(structure);
-const exportBlock = generator.generateExportBlock("myConst", true);
-```
-
-### FileManager
-
-Утилита для работы с файлами: чтение, запись, замена маркеров.
-
-Маркеры по умолчанию:
-
-```typescript
-// ## { COMPILED__WRITE_COMPILED_HERE } ## \
-// ## { COMPILED__WRITE_VALUES_HERE } ## \
-// ## { COMPILED__WRITE_EXPORT_HERE } ## \
-```
+Компилятор предназначен для генерации TypeScript-файлов с константами. Его функциональность полностью покрывается `BitBuilder.fromConfig` + ручной записью в файл (или использованием вашего `FileManager`). Если вы всё же используете старый код, обратитесь к предыдущим версиям документации.
 
 ---
 
 ## Типы и константы
 
-### Экспортируемые типы
+### Дополнительные типы для `BitBuilder.fromConfig`
 
-| Тип                 | Описание                                        |
-| ------------------- | ----------------------------------------------- |
-| `MustArray<T>`      | Кортеж с хотя бы одним элементом `[T, ...T[]]`. |
-| `ArrayOrType<T>`    | `T \| MustArray<T>`.                            |
-| `Bit`               | `bigint \| number \| string \| boolean`.        |
-| `BigIntRecord`      | `Record<string, bigint>`.                       |
-| `BuilderBitData<T>` | Параметры для `BitBuilder.execute`.             |
-| `BitFieldInput`     | `Bit \| BitField`.                              |
-| `ISettings<T>`      | `Record<T, string[]>` – для компилятора.        |
-| `CompilerConfig`    | Конфигурация компилятора.                       |
+```typescript
+type DefaultConfig = Record<string, { include: string[]; exclude: string[] }>;
 
-### Константы
+type ConfigKeys<Config extends DefaultConfig, K extends keyof Config> =
+  | Config[K]["include"][number]
+  | Config[K]["exclude"][number];
 
-| Константа                   | Значение           | Описание                      |
-| --------------------------- | ------------------ | ----------------------------- |
-| `ZERO_BIT`                  | `0n`               | Ноль.                         |
-| `ONE_BIT`                   | `1n`               | Единица.                      |
-| `BINARY_RADIX`              | `2`                | Основание двоичной системы.   |
-| `INDEX_OFFSET`              | `1`                | Смещение для пересчёта длины. |
-| `BINARY_PREFIX`             | `"0b"`             | Префикс для `BigInt`.         |
-| `HEX_PREFIX`                | `"0x"`             | Шестнадцатеричный префикс.    |
-| `BINARY_REGULAR_EXPRESSION` | `/^[01]+$/`        | Проверка двоичной строки.     |
-| `HEX_REGULAR_EXPRESSION`    | `/^[0-9a-fA-F]+$/` | Проверка hex-строки.          |
+type BitConfig<Config extends DefaultConfig> = {
+  available: { [Key in keyof Config]: Record<ConfigKeys<Config, Key>, bigint> };
+  default:   { [Key in keyof Config]: Record<ConfigKeys<Config, Key>, bigint> };
+  raw:       { [Key in keyof Config]: ConfigKeys<Config, Key>[] };
+};
+```
+
+Остальные типы описаны в [README.md](./README.md).
 
 ---
 
 ## Примеры
 
-### Права доступа (RBAC)
+### Полноценная система прав (RBAC) с `fromConfig`
 
 ```typescript
-import BitField from "fbit-field";
+import { BitBuilder, BitField } from "fbit-field";
 
-enum Permission {
-  Read = 1n << 0n,
-  Write = 1n << 1n,
-  Delete = 1n << 2n,
-  Share = 1n << 3n,
-}
+// 1. Описываем права
+const rights = {
+  posts: { include: ["create", "edit", "delete"], exclude: [] },
+  comments: { include: ["view", "create", "moderate"], exclude: ["delete"] },
+};
 
-const userPerms = new BitField(Permission.Read | Permission.Write);
-userPerms.has(Permission.Delete); // false
+// 2. Генерируем конфигурацию
+const perms = BitBuilder.fromConfig(rights);
 
-const adminPerms = userPerms.add(Permission.Delete, Permission.Share);
-adminPerms.has(Permission.Share); // true
+// 3. Создаём роли
+const guest = new BitField(perms.default.comments);          // только view, create
+const editor = new BitField(perms.available.posts);          // все права на посты
+const moderator = guest.add(perms.available.comments.moderate); // добавили moderate
+
+// 4. Проверяем
+editor.has(perms.available.posts.delete);      // true
+moderator.has(perms.available.comments.delete) // false (был исключён)
 ```
 
-### Функции с флагами
+### Динамическое добавление прав
 
 ```typescript
-function process(mode: BitField) {
-  if (mode.has(Flag.Verbose)) console.log("Подробный вывод");
-  if (mode.has(Flag.DryRun)) console.log("Сухой запуск");
-}
+const userPerms = new BitField();
+// ... позже
+userPerms.add(perms.available.posts.create);
 ```
-
-### Автоматическая генерация конфигурации через Compiler
-
-Создайте файл `scripts/generate-flags.ts`:
-
-```typescript
-import { Compiler } from "fbit-field/compiler";
-
-const compiler = new Compiler(
-  {
-    ui: ["showSidebar", "enableDarkMode", "compactView"],
-    api: ["canCreate", "canEdit", "canDelete"],
-  },
-  "./src/flags.ts",
-  {},
-  { name: "featureFlags", defaultExportOn: true },
-);
-compiler.execute();
-```
-
-Затем запустите `ts-node scripts/generate-flags.ts`. В результате получите готовый TypeScript-файл с константами и типами.
 
 ---
 

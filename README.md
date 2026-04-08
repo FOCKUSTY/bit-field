@@ -11,7 +11,7 @@
 
 - 🚀 **Производительность** – использует `BigInt`, поддерживает сотни битов без потери точности.
 - 🔧 **Гибкий API** – операции `add`, `remove`, `has`, `and`, `or`, `xor`, `not`, сдвиги, диапазоны.
-- 📦 **Генератор битовых конфигураций** – автоматическое создание TypeScript-констант из описания категорий.
+- 📦 **Генерация битовых конфигураций** – новый метод `BitBuilder.fromConfig` создаёт готовые объекты `available`/`default`/`raw` из простой декларации.
 - 🧩 **Итератор по установленным битам** – легко перебирать активные флаги.
 - 📝 **Полная типизация** – строгая проверка типов, вывод типов для имён битов.
 - 🧪 **Готовая поддержка** Node.js 12+ и современных браузеров.
@@ -20,10 +20,6 @@
 
 ```bash
 npm install fbit-field
-# или
-yarn add fbit-field
-# или
-pnpm add fbit-field
 ```
 
 ## Быстрый старт
@@ -33,78 +29,57 @@ pnpm add fbit-field
 ```typescript
 import BitField from "fbit-field";
 
-// Создание битового поля из числа, строки, bigint или другого BitField
-const flags = new BitField(0b1010); // 10
-
-// Проверка наличия бита
+const flags = new BitField(0b1010);
 flags.has(0b1000); // true
 flags.has(0b0010); // false
 
-// Добавление (установка) битов
 const newFlags = flags.add(0b0001); // 0b1011
 newFlags.has(0b0001); // true
 
-// Удаление битов
 const cleared = flags.remove(0b1000); // 0b0010
-
-// Комбинации
-const combined = flags.add(0b0100).remove(0b1000); // 0b0110
 ```
 
-### Работа с именованными флагами через `BitBuilder`
+### Генерация конфигурации прав (рекомендуемый способ)
+
+Вместо ручного перечисления битов используйте `BitBuilder.fromConfig`:
 
 ```typescript
 import { BitBuilder } from "fbit-field";
 
+const rightsConfig = {
+  user: { include: ["VIEW", "EDIT"], exclude: ["DELETE"] },
+  admin: { include: ["VIEW", "EDIT", "DELETE"], exclude: [] },
+};
+
+const bits = BitBuilder.fromConfig(rightsConfig);
+// bits.available.user: { VIEW: 1n<<0n, EDIT: 1n<<1n, DELETE: 1n<<2n }
+// bits.default.user:   { VIEW: 1n<<0n, EDIT: 1n<<1n, DELETE: 0n }
+// bits.raw.user:       ["VIEW", "EDIT", "DELETE"]
+
+// Использование в коде
+const userPermissions = new BitField(bits.default.user);
+userPermissions.has(bits.available.user.EDIT); // true
+```
+
+### Работа с именованными флагами через `BitBuilder.execute`
+
+```typescript
 const builder = new BitBuilder(["READ", "WRITE", "EXECUTE"]);
 const permissions = builder.execute();
 // { READ: 1n << 0n, WRITE: 1n << 1n, EXECUTE: 1n << 2n }
-
-// Объединение флагов в число
-const mask = builder.resolve(permissions); // 0b111
 ```
 
-### Генерация TypeScript-конфигурации (компилятор)
+### (Устаревший способ) Компилятор
+
+> ⚠️ **Устаревший API** – начиная с версии 3.1.0, рекомендуется использовать `BitBuilder.fromConfig`. Класс `Compiler` будет удалён в будущих версиях.
+
+Старый способ генерации TypeScript-файла:
 
 ```typescript
 import { Compiler } from "fbit-field/compiler";
 
-const settings = {
-  file: ["read", "write", "delete"],
-  user: ["view", "edit", "share"],
-};
-
-const compiler = new Compiler(settings, "./src/generated/flags.ts");
-compiler.execute(); // создаст файл с константой settings и вспомогательными типами
-```
-
-Сгенерированный файл будет содержать:
-
-```typescript
-export const settings = {
-  file: {
-    read: 1n << 0n,
-    write: 1n << 1n,
-    delete: 1n << 2n,
-  },
-  user: {
-    view: 1n << 3n,
-    edit: 1n << 4n,
-    share: 1n << 5n,
-  },
-} as const;
-```
-
-## Использование с TypeScript
-
-Библиотека написана на TypeScript и полностью типизирована. Вы получаете автодополнение и проверку типов для всех методов.
-
-```typescript
-import BitField from "fbit-field";
-
-const bf = new BitField(0b1100);
-bf.has(0b1000); // true
-// bf.has('не число') // ошибка компиляции
+const compiler = new Compiler({...}, "./flags.ts");
+compiler.execute();
 ```
 
 ## Документация
