@@ -56,7 +56,7 @@ export class BitBuilder<const T extends string> {
    * ```
    */
   public static fromConfig<const Config extends DefaultConfig>(
-    config: Config,
+    config: Config
   ): BitConfig<Config> {
     let offset: bigint = ZERO_BIT;
 
@@ -70,6 +70,10 @@ export class BitBuilder<const T extends string> {
     for (const key of keys) {
       const { include, exclude } = config[key];
 
+      if (include.some(permission => exclude.includes(permission))) {
+        throw new Error("Intersection was found.");
+      }
+
       const all = [...include, ...exclude];
       const builder = new BitBuilder(all);
 
@@ -80,8 +84,10 @@ export class BitBuilder<const T extends string> {
       bitConfig.default[key] = defaultBits;
       bitConfig.raw[key] = all;
 
-      const maxBit = BitFieldOperations.max(...Object.values(availableBits));
-      offset = BitFieldOperations.logarithm2(maxBit) + ONE_BIT;
+      const maxBit = BitFieldOperations.max(...Object.values(availableBits) as bigint[]);
+      if (maxBit !== ZERO_BIT) {
+        offset = BitFieldOperations.logarithm2(maxBit) + ONE_BIT;
+      }
     }
 
     return bitConfig;
@@ -231,12 +237,14 @@ export class BitBuilder<const T extends string> {
       if (include) {
         return include.includes(bit);
       }
+      
       return true;
     })();
 
     if (excluded || !included) {
-      return ZERO_BIT << modifier;
+      return ZERO_BIT;
     }
+    
     return ONE_BIT << modifier;
   }
 
@@ -264,5 +272,12 @@ export class BitBuilder<const T extends string> {
     return BitFieldOperations.logarithm2(maxBit) + ONE_BIT;
   }
 }
+
+BitBuilder.fromConfig({
+  user: {
+    exclude: ["ABC"],
+    include: ["A"]
+  }
+})
 
 export default BitBuilder;

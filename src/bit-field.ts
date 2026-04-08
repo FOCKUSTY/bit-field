@@ -273,6 +273,7 @@ export class BitField extends BitFieldView {
     if (BitFieldOperations.equals(this._bit, ZERO_BIT)) {
       return null;
     }
+    
     return this._bit & -this._bit;
   }
 
@@ -285,8 +286,8 @@ export class BitField extends BitFieldView {
     if (BitFieldOperations.equals(this._bit, ZERO_BIT)) {
       return null;
     }
-    const length = this._bit.toString(BINARY_RADIX).length;
-    return ONE_BIT << BigInt(length - INDEX_OFFSET);
+
+    return ONE_BIT << BitFieldOperations.logarithm2(this._bit);
   }
 
   /**
