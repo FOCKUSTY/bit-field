@@ -51,9 +51,11 @@ export class FileManager {
     markers: Array<{ pattern: RegExp; replacement: string }>,
   ): string {
     let content = this.read();
+
     for (const { pattern, replacement } of markers) {
       content = content.replace(pattern, replacement);
     }
+
     return content;
   }
 

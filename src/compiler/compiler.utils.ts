@@ -48,18 +48,20 @@ export const defaultSettingsFormat = <const T extends string>(
 /** Маркеры для вставки сгенерированных блоков в файл. */
 export const MARKERS = {
   compiled: {
-    line: "// ## { COMPILED__WRITE_COMPILED_HERE } ## \\",
+    line: "// ## { COMPILED__WRITE_COMPILED_HERE } ## \\\\",
     pattern:
-      /(\/\/ ## { COMPILED__WRITE_COMPILED_HERE } ## \\[.\s\S]*\/\/ ## { COMPILED__WRITE_COMPILED_HERE } ## \\)|(\/\/ ## { WRITE_COMPILED_HERE } ## \\)/gi,
+      /(\/\/ ## { COMPILED__WRITE_COMPILED_HERE } ## \\\\[.\s\S]*\/\/ ## { COMPILED__WRITE_COMPILED_HERE } ## \\\\)|(\/\/ ## { WRITE_COMPILED_HERE } ## \\\\)/gi,
   },
   export: {
-    line: "// ## { COMPILED__WRITE_EXPORT_HERE } ## \\",
+    line: "// ## { COMPILED__WRITE_EXPORT_HERE } ## \\\\",
     pattern:
-      /(\/\/ ## { COMPILED__WRITE_EXPORT_HERE } ## \\[.\s\S]*\/\/ ## { COMPILED__WRITE_EXPORT_HERE } ## \\)|(\/\/ ## { WRITE_EXPORT_HERE } ## \\)/gi,
+      /(\/\/ ## { COMPILED__WRITE_EXPORT_HERE } ## \\\\[.\s\S]*\/\/ ## { COMPILED__WRITE_EXPORT_HERE } ## \\\\)|(\/\/ ## { WRITE_EXPORT_HERE } ## \\\\)/gi,
   },
   values: {
-    line: "// ## { COMPILED__WRITE_VALUES_HERE } ## \\",
+    line: "// ## { COMPILED__WRITE_VALUES_HERE } ## \\\\",
     pattern:
-      /(\/\/ ## { COMPILED__WRITE_VALUES_HERE } ## \\[.\s\S]*\/\/ ## { COMPILED__WRITE_VALUES_HERE } ## \\)|(\/\/ ## { WRITE_VALUES_HERE } ## \\)/gi,
+      /(\/\/ ## { COMPILED__WRITE_VALUES_HERE } ## \\\\[.\s\S]*\/\/ ## { COMPILED__WRITE_VALUES_HERE } ## \\\\)|(\/\/ ## { WRITE_VALUES_HERE } ## \\\\)/gi,
   },
 };
+
+export const SPACE = "{{ SPACE }}" as const;

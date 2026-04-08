@@ -26,7 +26,7 @@
   "module": "commonjs",
   "scripts": {
     "build": "tsc",
-    "test": "ts-mocha ./src/test/**/*.test.ts"
+    "test": "ts-mocha ./test/**/*.test.ts"
   },
   "keywords": [
     "bitfield",
@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.12.2",
     "mocha": "^11.7.0",
     "ts-mocha": "^11.1.0",
     "ts-node": "^10.9.2",

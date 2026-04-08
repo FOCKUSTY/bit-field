@@ -1,4 +1,4 @@
-import type { BigIntRecord, BuilderBitData } from "./types";
+import type { BigIntRecord, BuilderBitData, MaybeReadonly } from "./types";
 
 import { ONE_BIT, ZERO_BIT } from "./constants";
 import { BitFieldOperations } from "./bit-field-operations";
@@ -18,7 +18,7 @@ export class BitBuilder<const T extends string> {
   /**
    * @param bits - Массив имён битов в порядке их следования.
    */
-  public constructor(public readonly bits: T[]) {}
+  public constructor(public readonly bits: MaybeReadonly<T[]>) {}
 
   /**
    * Объединяет объект именованных битов в одно число (побитовое ИЛИ).
@@ -65,6 +65,7 @@ export class BitBuilder<const T extends string> {
         exclude: [],
         ...(data || {}),
       });
+
       return [bit, computedBit];
     });
 

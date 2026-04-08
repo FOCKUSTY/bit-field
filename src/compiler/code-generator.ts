@@ -1,5 +1,5 @@
 import type { ISettings } from "./compiler.types";
-import { defaultSettingsFormat, format } from "./compiler.utils";
+import { defaultSettingsFormat, format, SPACE } from "./compiler.utils";
 
 import { BitFieldOperations } from "../bit-field-operations";
 import { BitBuilder } from "../bit-builder";
@@ -28,19 +28,22 @@ export class CodeGenerator<const T extends string> {
    *
    * @returns Объект вида `{ категория: { имяБита: "1n << N" } }`.
    */
-  public generateStructure(): Record<string, Record<string, string>> {
+  public generateStructure(jsdocs?: boolean): Record<string, Record<string, string>> {
     const categories = Object.keys(this.settings) as T[];
     const result: Record<string, Record<string, string>> = {};
+
     let currentOffset: Record<string, bigint> = {};
 
     for (const category of categories) {
       const { categories: categoriesMap, offset } = this.processCategory(
         category,
         currentOffset,
+        jsdocs
       );
       result[category] = categoriesMap;
       currentOffset = offset;
     }
+
     return result;
   }
 
@@ -55,9 +58,9 @@ export class CodeGenerator<const T extends string> {
   ): string {
     return JSON.stringify(structure, null, 2)
       .replaceAll('"', "")
+      .replaceAll(SPACE, " ")
       .replaceAll("}", "} as const")
-      .replaceAll("as const,", "as const,\n")
-      .replaceAll("n,", "n,\n");
+      .replaceAll("as const,", "as const,\n");
   }
 
   /**
@@ -104,9 +107,9 @@ export type ${capitalized}Keys<T extends Keys> = keyof ${capitalized}<T>;`;
    * @param bitValue - Числовое значение бита (степень двойки).
    * @returns Кортеж `[ ключ, значение ]`, где значение — строка `"1n << N"`.
    */
-  private formatBitEntry(name: string, bitValue: bigint): [string, string] {
+  private formatBitEntry(name: string, bitValue: bigint, jsdocs?: boolean): [string, string] {
     return [
-      `/** @value ${bitValue} */\n${name}`,
+      jsdocs ? `/** @value ${bitValue} */${SPACE}${name}` : name,
       `1n << ${BitFieldOperations.logarithm2(bitValue)}n`,
     ];
   }
@@ -121,17 +124,18 @@ export type ${capitalized}Keys<T extends Keys> = keyof ${capitalized}<T>;`;
   private processCategory(
     category: T,
     offset: Record<string, bigint>,
+    jsdocs?: boolean
   ): {
     categories: Record<string, string>;
     offset: Record<string, bigint>;
   } {
     const formattedNames = this.settingsFormat(this.settings[category]);
-    const bits = new BitBuilder(formattedNames).execute(offset);
+    const bits = new BitBuilder(formattedNames).execute({ offset });
 
     const categories = Object.fromEntries(
-      Object.entries(bits).map(([name, bitValue]) =>
-        this.formatBitEntry(name, bitValue),
-      ),
+      Object.entries(bits).map(([name, bitValue]) => {
+        return this.formatBitEntry(name, bitValue, jsdocs)
+      }),
     );
 
     return { categories, offset: bits };

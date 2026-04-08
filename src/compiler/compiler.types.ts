@@ -12,4 +12,6 @@ export interface CompilerConfig {
   writeInCompiler: boolean;
   /** Добавлять ли `export default constName` в конец файла. */
   defaultExportOn: boolean;
+  /** генерировать ли документацию (по умолчанию false) */
+  jsdocs?: boolean;
 }

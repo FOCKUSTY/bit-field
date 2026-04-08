@@ -13,6 +13,11 @@ export type MustArray<T, K = T> = [T, ...K[]];
 export type ArrayOrType<T> = MustArray<T> | T;
 
 /**
+ * Либо только для чтения, либо обычный тип.
+ */
+export type MaybeReadonly<T> = Readonly<T> | T;
+
+/**
  * Тип, который может быть преобразован в BigInt.
  */
 export type Bit = bigint | number | string | boolean;

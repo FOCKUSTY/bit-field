@@ -5,6 +5,7 @@ import { CodeGenerator } from "./code-generator";
 import { FileManager } from "./file-manager";
 
 import { parse } from "path";
+import { MaybeReadonly } from "../types";
 
 /**
  * Компилятор для преобразования описания битовых категорий в TypeScript-файл с константой и типами.
@@ -12,7 +13,7 @@ import { parse } from "path";
  *
  * @template T - Строковые литералы категорий.
  */
-export class Compiler<T extends string> {
+export class Compiler<const T extends string> {
   /** Список ключей категорий. */
   public readonly keys: T[];
   /** Конфигурация компилятора. */
@@ -32,7 +33,7 @@ export class Compiler<T extends string> {
    * @param config - Частичная конфигурация (имя константы, флаги).
    */
   public constructor(
-    public readonly settings: ISettings<T>,
+    public readonly settings: MaybeReadonly<ISettings<T>>,
     public readonly filePath: string,
     methods?: {
       settingsFormat?: (settings: ISettings<T>[T]) => string[];
@@ -98,7 +99,7 @@ export class Compiler<T extends string> {
    * @returns Объект, представляющий генерируемую константу.
    */
   public compile(): Record<string, Record<string, string>> {
-    return this.codeGenerator.generateStructure();
+    return this.codeGenerator.generateStructure(this.config.jsdocs);
   }
 
   /**

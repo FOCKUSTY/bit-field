@@ -1,4 +1,5 @@
 import type { BitFieldInput } from "./types";
+
 import { BINARY_RADIX, INDEX_OFFSET, ONE_BIT, ZERO_BIT } from "./constants";
 
 /**

@@ -1,6 +1,8 @@
 import type { BitFieldInput } from "./types";
+
 import { BINARY_RADIX, ZERO_BIT } from "./constants";
 import { BitFieldOperations } from "./bit-field-operations";
+
 import { inspect } from "util";
 
 /**
