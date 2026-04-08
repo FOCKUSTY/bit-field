@@ -276,11 +276,4 @@ export class BitBuilder<const T extends string> {
   }
 }
 
-BitBuilder.fromConfig({
-  user: {
-    exclude: ["ABC"],
-    include: ["A"],
-  },
-});
-
 export default BitBuilder;
