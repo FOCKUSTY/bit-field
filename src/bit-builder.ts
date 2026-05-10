@@ -1,6 +1,7 @@
 import type {
   BigIntRecord,
   BitConfig,
+  BitPermissions,
   BuilderBitData,
   DefaultConfig,
   MaybeReadonly,
@@ -93,6 +94,46 @@ export class BitBuilder<const T extends string> {
     }
 
     return bitConfig;
+  }
+
+  /**
+   * Сворачивает {@link BitConfig} (полученный через {@link fromConfig}) в {@link BitPermissions},
+   * заменяя для каждой категории объект именованных битов на их побитовое ИЛИ (сумму).
+   *
+   * @template Config - Тип конфигурации, соответствующий {@link DefaultConfig}.
+   * @param bitConfig - Результат вызова {@link fromConfig}, содержащий поля `available`, `default` и `raw`.
+   * @returns Объект с полями `available` и `default`, где для каждой категории лежит `bigint` —
+   *         сумма всех битов категории (с учётом исключений для `default`).
+   *
+   * @example
+   * ```ts
+   * const config = {
+   *   user: { include: ["VIEW", "EDIT"], exclude: ["DELETE"] },
+   * };
+   *
+   * const bitConfig = BitBuilder.fromConfig(config);
+   * const permissions = BitBuilder.resolveConfig(bitConfig);
+   * // permissions.available.user === 7n  (1+2+4)
+   * // permissions.default.user   === 3n  (1+2+0)
+   * ```
+   */
+  public static resolveConfig<const Config extends DefaultConfig>(bitConfig: BitConfig<Config>): BitPermissions<Config> {
+    const keys = Object.keys(bitConfig.raw) as (keyof Config)[];
+
+    const bitPermissions = {
+      available: {},
+      default: {}
+    } as BitPermissions<Config>;
+
+    for (const key of keys) {
+      const availablePermissions = BitBuilder.resolve(bitConfig.available[key]);
+      const defaultPermissions = BitBuilder.resolve(bitConfig.default[key]);
+      
+      bitPermissions.available[key] = availablePermissions;
+      bitPermissions.default[key] = defaultPermissions;
+    }
+
+    return bitPermissions;
   }
 
   /**

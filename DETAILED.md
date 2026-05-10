@@ -2,32 +2,32 @@
 
 ## Содержание
 
-1. [Содержание](#содержание)
-1. [Класс BitField](#класс-bitfield)
-    - [Конструктор](#конструктор)
-    - [Статические методы](#статические-методы)
-    - [Свойства](#свойства)
-    - [Методы (возвращают новый `BitField`)](#методы-возвращают-новый-bitfield)
-    - [Методы проверки](#методы-проверки)
-    - [Прочие методы](#прочие-методы)
-    - [Пример](#пример)
-1. [Класс BitFieldView](#класс-bitfieldview)
-    - [Методы](#методы)
-    - [Пример](#пример-2)
-1. [Класс BitFieldOperations](#класс-bitfieldoperations)
-1. [Класс BitBuilder](#класс-bitbuilder)
-    - [`BitBuilder.fromConfig` (рекомендуемый способ)](#bitbuilderfromconfig-рекомендуемый-способ)
-    - [`BitBuilder.fromData`](#bitbuilderfromdata)
-    - [Методы execute и resolve](#методы-execute-и-resolve)
-1. [Компилятор (устаревший)](#компилятор-устаревший)
-1. [Типы и константы](#типы-и-константы)
-    - [Основные типы](#основные-типы)
-    - [Типы для `BitBuilder.fromConfig`](#типы-для-bitbuilderfromconfig)
-    - [Константы](#константы)
-1. [Примеры](#примеры)
-    - [Полноценная система прав (RBAC) с `fromConfig`](#полноценная-система-прав-rbac-с-fromconfig)
-    - [Динамическое добавление прав](#динамическое-добавление-прав)
-1. [Лицензия](#лицензия)
+- [Класс BitField](#класс-bitfield)
+  - [Конструктор](#конструктор)
+  - [Статические методы](#статические-методы)
+  - [Свойства](#свойства)
+  - [Методы (возвращают новый `BitField`)](#методы-возвращают-новый-bitfield)
+  - [Методы проверки](#методы-проверки)
+  - [Прочие методы](#прочие-методы)
+  - [Пример](#пример)
+- [Класс BitFieldView](#класс-bitfieldview)
+  - [Методы](#методы)
+  - [Пример](#пример-2)
+- [Класс BitFieldOperations](#класс-bitfieldoperations)
+- [Класс BitBuilder](#класс-bitbuilder)
+  - [`BitBuilder.fromConfig` (рекомендуемый способ)](#bitbuilderfromconfig-рекомендуемый-способ)
+  - [`BitBuilder.fromData`](#bitbuilderfromdata)
+  - [`BitBuilder.resolveConfig`](#bitbuilderresolveConfig)
+  - [Методы execute и resolve](#методы-execute-и-resolve)
+- [Компилятор (устаревший)](#компилятор-устаревший)
+- [Типы и константы](#типы-и-константы)
+  - [Основные типы](#основные-типы)
+  - [Типы для `BitBuilder.fromConfig`](#типы-для-bitbuilderfromconfig)
+  - [Константы](#константы)
+- [Примеры](#примеры)
+  - [Полноценная система прав (RBAC) с `fromConfig`](#полноценная-система-прав-rbac-с-fromconfig)
+  - [Динамическое добавление прав](#динамическое-добавление-прав)
+- [Лицензия](#лицензия)
 
 ---
 
@@ -227,6 +227,48 @@ const { available, default } = BitBuilder.fromData({
 // available: { READ: 1n << 5n, WRITE: 1n << 6n, DELETE: 1n << 7n }
 // default:   { READ: 1n << 5n, WRITE: 1n << 6n, DELETE: 0n }
 ```
+
+### `BitBuilder.resolveConfig`
+
+Сворачивает объект `BitConfig` (полученный из `fromConfig`) в `BitPermissions`, заменяя именованные биты на их суммарное значение (побитовое ИЛИ) для каждой категории.
+
+```typescript
+static resolveConfig<Config extends DefaultConfig>(
+  bitConfig: BitConfig<Config>
+): BitPermissions<Config>
+```
+
+**Параметры:**
+
+- `bitConfig` – результат вызова `BitBuilder.fromConfig(config)` с полями `available`, `default` и `raw`.
+
+**Возвращает:** объект с полями `available` и `default`, где каждое значение — `bigint` (результат `BitBuilder.resolve` для соответствующей категории).
+
+**Пример:**
+
+```typescript
+const config = {
+  user: { include: ["VIEW", "EDIT"], exclude: ["DELETE"] },
+  admin: { include: ["VIEW", "EDIT", "DELETE"], exclude: [] },
+};
+
+const bitConfig = BitBuilder.fromConfig(config);
+const permissions = BitBuilder.resolveConfig(bitConfig);
+
+// permissions.available.user = (1n<<0n) | (1n<<1n) | (1n<<2n) = 7n
+// permissions.default.user   = (1n<<0n) | (1n<<1n) | 0n = 3n
+// permissions.available.admin = (1n<<3n) | (1n<<4n) | (1n<<5n) = 56n (7 << 3)
+// permissions.default.admin   = 56n
+
+// Использование
+const userPermissions = new BitField(permissions.default.user);
+userPermissions.has(permissions.available.user); // false (нет DELETE)
+userPermissions.has(BitBuilder.resolve(bitConfig.default.user)); // true (3n)
+```
+
+---
+
+Эти изменения полностью покрывают новый метод, сохраняя стиль проекта. Тесты проверяют корректность агрегации битов, работу с исключениями, пустыми наборами и несколькими категориями.
 
 ### Методы execute и resolve
 

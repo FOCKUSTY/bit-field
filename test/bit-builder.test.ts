@@ -5,6 +5,79 @@ import { BitBuilder } from "../src/bit-builder";
 describe("BitBuilder", () => {
   const bits = ["READ", "WRITE", "DELETE"] as const;
 
+  describe("resolveConfig", () => {
+    it("should resolve a single category with include and exclude", () => {
+      const config = {
+        perms: { include: ["READ", "WRITE"], exclude: ["DELETE"] },
+      };
+      const bitConfig = BitBuilder.fromConfig(config);
+      const resolved = BitBuilder.resolveConfig(bitConfig);
+
+      // available: READ(1), WRITE(2), DELETE(4) => сумма 7
+      assert.strictEqual(resolved.available.perms, 7n);
+      // default: READ(1), WRITE(2), DELETE(0) => сумма 3
+      assert.strictEqual(resolved.default.perms, 3n);
+    });
+
+    it("should resolve multiple categories with sequential offsets", () => {
+      const config = {
+        cat1: { include: ["A", "B"], exclude: [] },
+        cat2: { include: ["C"], exclude: ["D"] },
+      };
+      const bitConfig = BitBuilder.fromConfig(config);
+      const resolved = BitBuilder.resolveConfig(bitConfig);
+
+      // cat1: A=1, B=2 => available=3, default=3
+      assert.strictEqual(resolved.available.cat1, 3n);
+      assert.strictEqual(resolved.default.cat1, 3n);
+      // cat2: смещение log2(2)+1=2, C=1<<2=4, D=1<<3=8 (exclude)
+      // available: 4|8=12, default: 4|0=4
+      assert.strictEqual(resolved.available.cat2, 12n);
+      assert.strictEqual(resolved.default.cat2, 4n);
+    });
+
+    it("should handle categories with only includes", () => {
+      const config = {
+        flags: { include: ["X", "Y", "Z"], exclude: [] },
+      };
+      const resolved = BitBuilder.resolveConfig(BitBuilder.fromConfig(config));
+      // available = default = 1|2|4 = 7
+      assert.strictEqual(resolved.available.flags, 7n);
+      assert.strictEqual(resolved.default.flags, 7n);
+    });
+
+    it("should handle categories with only excludes", () => {
+      const config = {
+        empty: { include: [], exclude: ["A", "B"] },
+      };
+      const resolved = BitBuilder.resolveConfig(BitBuilder.fromConfig(config));
+      // available: A=1, B=2 (смещение 0) => 3
+      // default: A=0, B=0 => 0
+      assert.strictEqual(resolved.available.empty, 3n);
+      assert.strictEqual(resolved.default.empty, 0n);
+    });
+
+    it("should return object with same keys as input", () => {
+      const config = {
+        a: { include: ["1"], exclude: [] },
+        b: { include: ["2"], exclude: [] },
+      };
+      const resolved = BitBuilder.resolveConfig(BitBuilder.fromConfig(config));
+      assert.deepStrictEqual(Object.keys(resolved.available).sort(), ["a", "b"]);
+      assert.deepStrictEqual(Object.keys(resolved.default).sort(), ["a", "b"]);
+    });
+
+    it("should work with empty include and exclude (both empty)", () => {
+      const config = {
+        none: { include: [], exclude: [] },
+      };
+      const resolved = BitBuilder.resolveConfig(BitBuilder.fromConfig(config));
+      // Нет битов для генерации -> offset останется 0, результат 0n
+      assert.strictEqual(resolved.available.none, 0n);
+      assert.strictEqual(resolved.default.none, 0n);
+    });
+  });
+
   describe("static resolve", () => {
     it("should OR all values", () => {
       const obj = { a: 1n, b: 2n, c: 4n };

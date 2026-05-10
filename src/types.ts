@@ -79,3 +79,13 @@ export type BitConfig<Config extends DefaultConfig> = {
     [Key in keyof Config]: ConfigKeys<Config, Key>[];
   };
 };
+
+export type BitPermissions<Config extends DefaultConfig> = {
+  available: {
+    [Key in keyof Config]: bigint;
+  };
+ 
+  default: {
+    [Key in keyof Config]: bigint;
+  };
+}

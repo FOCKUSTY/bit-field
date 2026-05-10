@@ -61,6 +61,13 @@ const userPermissions = new BitField(bits.default.user);
 userPermissions.has(bits.available.user.EDIT); // true
 ```
 
+Для получения итогового числа (суммы флагов) используйте `resolveConfig`:
+
+```typescript
+const perms = BitBuilder.resolveConfig(bits);
+// perms.available.user → 7n
+// perms.default.user → 3n
+
 ### Работа с именованными флагами через `BitBuilder.execute`
 
 ```typescript
